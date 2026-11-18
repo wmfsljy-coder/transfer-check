@@ -204,13 +204,16 @@ var META = {
 
 /* 학년별 정원·현원 (기본값: 2026 공시 1학년 212, 2학년 200, 3학년 213명. 정원 내/외 구분은 나이스로 확인 후 수정) */
 var QUOTA_DEFAULT = {
-  baseDate: '2026-04-01 공시 기준(추정 구분)',
+  baseDate: '2026-10-14 학생 현황(1학년 211·2학년 196·3학년 214) · 정원은 교육청 재적 현황(2026. 11. 5.) 기준',
   g: {
-    1: { ent: 210, inside: 210, out: { general: 2, innov: 0, env: 0, returnee: 0, merit: 0, military: 0, gradeDecide: 0, unlimited: 0 } },
-    2: { ent: 210, inside: 200, out: { general: 0, innov: 0, env: 0, returnee: 0, merit: 0, military: 0, gradeDecide: 0, unlimited: 0 } },
-    3: { ent: 210, inside: 210, out: { general: 3, innov: 0, env: 0, returnee: 0, merit: 0, military: 0, gradeDecide: 0, unlimited: 0 } }
+    1: { ent: 210, inside: 210, out: { general: 1, innov: 0, env: 0, returnee: 0, merit: 0, military: 0, gradeDecide: 0, unlimited: 0 } },
+    2: { ent: 210, inside: 196, out: { general: 0, innov: 0, env: 0, returnee: 0, merit: 0, military: 0, gradeDecide: 0, unlimited: 0 } },
+    3: { ent: 217, inside: 214, out: { general: 0, innov: 0, env: 0, returnee: 0, merit: 0, military: 0, gradeDecide: 0, unlimited: 0 } }
   }
 };
+/* 1학년 정원 외 1명은 유형 미확인이라 일반 전입으로 넣어 둠(나이스로 유형 확인 후 수정) */
+/* 경남교육청 「학교재적 현황」(중등교육과 게시판, 대략 매월): 학교별 [정원, 현원, 정원 내 결원, 정원 외 포함 결원(5%)] × 학년 */
+var ENROLL = {"docNo":"20261106152848660","title":"2026. 11월(2026. 11. 5. 기준) 고등학교 재적 현황","base":"2026. 11. 5.","recs":{"창원중앙고등학교":[[192,172,20,29],[192,184,8,17],[192,186,6,15]],"창원여자고등학교":[[168,137,31,39],[144,120,24,31],[168,157,11,19]],"창원명지여자고등학교":[[168,165,3,11],[168,163,5,13],[168,160,8,16]],"창원남산고등학교":[[168,172,0,4],[168,166,2,10],[168,166,2,10]],"창원중앙여자고등학교":[[168,130,38,46],[120,109,11,17],[168,154,14,22]],"창원사파고등학교":[[168,168,0,8],[168,167,1,9],[168,162,6,14]],"창원용호고등학교":[[192,198,0,3],[192,195,0,6],[192,181,11,20]],"창원봉림고등학교":[[168,158,10,18],[168,162,6,14],[168,158,10,18]],"창원신월고등학교":[[168,168,0,8],[168,164,4,12],[168,162,6,14]],"창원명곡고등학교":[[168,169,0,7],[168,168,0,8],[168,163,5,13]],"창원대암고등학교":[[168,169,0,7],[168,160,8,16],[168,165,3,11]],"창원토월고등학교":[[168,166,2,10],[168,155,13,21],[168,161,7,15]],"경상고등학교":[[168,169,0,7],[168,154,14,22],[168,159,9,17]],"창원남고등학교":[[192,192,0,9],[168,159,9,17],[192,169,23,32]],"창원문성고등학교":[[192,161,31,40],[168,141,27,35],[192,157,35,44]],"창원고등학교":[[192,194,0,7],[192,189,3,12],[192,190,2,11]],"창원경일고등학교":[[168,155,13,21],[168,134,34,42],[168,151,17,25]],"창원경일여자고등학교":[[144,132,12,19],[120,112,8,14],[144,91,53,60]],"창원성민여자고등학교":[[168,165,3,11],[168,152,16,24],[168,152,16,24]],"창원북면고등학교":[[280,281,0,13],[280,280,0,14],[308,306,2,17]],"창원과학고등학교":[[80,82,0,2],[80,77,3,7],[80,51,29,33]],"창원대산고등학교":[[168,163,5,13],[168,155,13,21],[168,151,17,25]],"창원기계공업고등학교":[[300,289,11,26],[300,287,13,28],[300,300,0,15]],"창원공업고등학교":[[180,177,3,12],[140,98,42,49],[200,115,85,95]],"경남관광고등학교":[[200,202,0,8],[200,189,11,21],[200,178,22,32]],"마산고등학교":[[168,174,0,2],[168,168,0,8],[168,173,0,3]],"마산여자고등학교":[[168,168,0,8],[168,163,5,13],[168,168,0,8]],"합포고등학교":[[168,171,0,5],[168,170,0,6],[168,166,2,10]],"마산가포고등학교":[[144,143,1,8],[144,139,5,12],[144,145,0,6]],"마산구암고등학교":[[168,166,2,10],[168,163,5,13],[168,166,2,10]],"마산용마고등학교":[[168,176,0,0],[168,170,0,6],[168,170,0,6]],"마산내서여자고등학교":[[216,214,2,12],[216,212,4,14],[216,219,0,7]],"마산중앙고등학교":[[144,138,6,13],[120,119,1,7],[144,144,0,7]],"창신고등학교":[[192,191,1,10],[192,184,8,17],[192,182,10,19]],"성지여자고등학교":[[168,161,7,15],[144,118,26,33],[168,166,2,10]],"마산제일여자고등학교":[[192,176,16,25],[192,178,14,23],[192,186,6,15]],"마산제일고등학교":[[216,221,0,5],[216,216,0,10],[216,220,0,6]],"마산무학여자고등학교":[[192,183,9,18],[192,189,3,12],[192,191,1,10]],"마산삼진고등학교":[[168,168,0,8],[168,160,8,16],[168,165,3,11]],"태봉고등학교":[[45,26,19,21],[45,30,15,17],[45,31,14,16]],"마산공업고등학교":[[200,194,6,16],[200,183,17,27],[200,138,62,72]],"한일여자고등학교":[[200,196,4,14],[200,189,11,21],[200,198,2,12]],"진해고등학교":[[300,299,1,16],[300,297,3,18],[310,297,13,28]],"진해여자고등학교":[[300,245,55,70],[270,261,9,22],[270,264,6,19]],"진해용원고등학교":[[300,299,1,16],[300,295,5,20],[290,289,1,15]],"웅천고등학교":[[210,211,0,9],[210,196,14,24],[217,214,3,13]],"진해중앙고등학교":[[210,214,0,6],[210,204,6,16],[217,210,7,17]],"진해세화여자고등학교":[[240,207,33,45],[240,218,22,34],[248,246,2,14]],"경상국립대학교사범대학부설고등학교":[[156,157,0,6],[144,146,0,5],[150,152,0,5]],"진주고등학교":[[182,186,0,5],[168,169,0,7],[200,198,2,12]],"진주여자고등학교":[[208,215,0,3],[192,192,0,9],[225,220,5,16]],"명신고등학교":[[184,189,0,4],[192,190,2,11],[225,224,1,12]],"진주중앙고등학교":[[182,181,1,10],[168,165,3,11],[200,197,3,13]],"경남과학고등학교":[[100,101,0,4],[100,102,0,3],[100,59,41,46]],"경남체육고등학교":[[90,83,7,11],[90,61,29,33],[90,76,14,18]],"진서고등학교":[[26,3,23,24],[24,4,20,21],[25,9,16,17]],"진양고등학교":[[230,235,0,6],[230,233,0,8],[230,226,4,15]],"대아고등학교":[[234,235,0,10],[216,215,1,11],[250,246,4,16]],"진주동명고등학교":[[234,231,3,14],[216,209,7,17],[250,243,7,19]],"삼현여자고등학교":[[234,236,0,9],[216,214,2,12],[250,245,5,17]],"경해여자고등학교":[[234,229,5,16],[216,202,14,24],[250,226,24,36]],"진주제일여자고등학교":[[234,238,0,7],[216,212,4,14],[250,237,13,25]],"진주외국어고등학교":[[78,43,35,38],[72,61,11,14],[75,53,22,25]],"경남예술고등학교":[[109,96,13,18],[109,82,27,32],[109,85,24,29]],"진주기계공업고등학교":[[180,181,0,8],[180,172,8,17],[180,173,7,16]],"경남정보고등학교":[[100,76,24,29],[80,32,48,52],[120,23,97,103]],"경남자동차고등학교":[[140,128,12,19],[140,99,41,48],[140,88,52,59]],"선명여자고등학교":[[200,108,92,102],[160,102,58,66],[200,144,56,66]],"경진고등학교":[[140,129,11,18],[140,93,47,54],[140,103,37,44]],"통영고등학교":[[330,329,1,17],[308,316,0,7],[280,283,0,11]],"충무고등학교":[[184,163,21,30],[184,164,20,29],[184,184,0,9]],"통영여자고등학교":[[270,252,18,31],[224,205,19,30],[280,230,50,64]],"동원고등학교":[[300,299,1,16],[280,274,6,20],[280,267,13,27]],"충렬여자고등학교":[[180,182,0,7],[168,162,6,14],[196,173,23,32]],"삼천포중앙고등학교":[[120,121,0,5],[120,116,4,10],[110,102,8,13]],"곤양고등학교":[[24,14,10,11],[24,6,18,19],[22,13,9,10]],"삼천포고등학교":[[144,142,2,9],[144,135,9,16],[132,133,0,5]],"용남고등학교":[[168,166,2,10],[168,164,4,12],[168,156,12,20]],"사천고등학교":[[196,195,1,10],[196,187,9,18],[196,187,9,18]],"삼천포공업고등학교":[[96,91,5,9],[96,88,8,12],[108,105,3,8]],"경남자영고등학교":[[100,107,0,0],[100,101,0,4],[100,109,0,0]],"삼천포여자고등학교":[[144,136,8,15],[144,121,23,30],[132,121,11,17]],"사천여자고등학교":[[80,62,18,22],[60,49,11,14],[80,61,19,23]],"김해고등학교":[[208,198,10,20],[192,191,1,10],[200,201,0,9]],"김해여자고등학교":[[208,199,9,19],[192,190,2,11],[200,178,22,32]],"김해가야고등학교":[[234,236,0,9],[192,193,0,8],[200,206,0,4]],"김해경원고등학교":[[234,234,0,11],[216,222,0,4],[225,230,0,6]],"김해분성고등학교":[[208,211,0,7],[192,191,1,10],[200,201,0,9]],"김해분성여자고등학교":[[184,179,5,14],[184,178,6,15],[184,180,4,13]],"김해영운고등학교":[[208,186,22,32],[192,188,4,13],[200,200,0,10]],"김해삼방고등학교":[[208,202,6,16],[192,185,7,16],[200,201,0,9]],"김해삼문고등학교":[[377,375,2,20],[330,321,9,25],[372,359,13,31]],"장유고등학교":[[348,350,0,15],[377,361,16,34],[377,378,0,17]],"진영고등학교":[[280,282,0,12],[280,287,0,7],[280,289,0,5]],"김해대청고등학교":[[377,377,0,18],[377,371,6,24],[377,373,4,22]],"김해외국어고등학교":[[125,128,0,3],[125,124,1,7],[125,119,6,12]],"김해제일고등학교":[[208,200,8,18],[192,190,2,11],[200,192,8,18]],"김해임호고등학교":[[156,124,32,39],[144,141,3,10],[150,143,7,14]],"구산고등학교":[[208,208,0,10],[192,185,7,16],[200,193,7,17]],"김해율하고등학교":[[377,364,13,31],[330,313,17,33],[363,348,15,33]],"김해수남고등학교":[[377,377,0,18],[348,341,7,24],[348,347,1,18]],"김해중앙여자고등학교":[[115,82,33,38],[115,102,13,18],[125,109,16,22]],"김해생명과학고등학교":[[160,175,0,0],[160,168,0,0],[160,154,6,14]],"김해건설공업고등학교":[[220,216,4,15],[220,200,20,31],[220,179,41,52]],"진영제일고등학교":[[100,96,4,9],[100,94,6,11],[100,86,14,19]],"김해한일여자고등학교":[[160,152,8,16],[160,137,23,31],[160,145,15,23]],"밀양고등학교":[[150,146,4,11],[144,137,7,14],[168,162,6,14]],"밀양여자고등학교":[[100,72,28,33],[72,70,2,5],[96,82,14,18]],"세종고등학교":[[125,125,0,6],[120,121,0,5],[144,144,0,7]],"밀성고등학교":[[125,122,3,9],[120,122,0,4],[144,140,4,11]],"삼랑진고등학교":[[75,78,0,0],[72,67,5,8],[72,66,6,9]],"한국나노마이스터고등학교":[[80,77,3,7],[80,69,11,15],[90,77,13,17]],"밀성제일고등학교":[[100,73,27,32],[100,62,38,43],[120,64,56,62]],"밀양동명고등학교":[[75,73,2,5],[72,69,3,6],[72,70,2,5]],"거제중앙고등학교":[[390,394,0,15],[377,378,0,17],[377,380,0,15]],"거제제일고등학교":[[300,299,1,16],[261,260,1,14],[261,259,2,15]],"거제옥포고등학교":[[390,380,10,29],[348,334,14,31],[348,342,6,23]],"연초고등학교":[[390,378,12,31],[377,357,20,38],[377,358,19,37]],"거제상문고등학교":[[390,394,0,15],[360,352,8,26],[377,376,1,19]],"거제고등학교":[[270,269,1,14],[261,246,15,28],[261,259,2,15]],"해성고등학교":[[300,265,35,50],[261,254,7,20],[261,254,7,20]],"경남산업고등학교":[[180,139,41,50],[140,109,31,38],[180,126,54,63]],"거제공업고등학교":[[128,126,2,8],[128,107,21,27],[144,104,40,47]],"거제여자상업고등학교":[[100,40,60,65],[80,30,50,54],[120,32,88,94]],"양산고등학교":[[280,263,17,31],[290,270,20,34],[341,326,15,32]],"웅상고등학교":[[290,302,0,2],[261,250,11,24],[248,250,0,10]],"양산남부고등학교":[[308,314,0,9],[319,326,0,8],[310,314,0,11]],"물금고등학교":[[308,312,0,11],[319,321,0,13],[341,332,9,26]],"서창고등학교":[[290,298,0,6],[290,288,2,16],[310,306,4,19]],"범어고등학교":[[280,291,0,3],[290,295,0,9],[310,313,0,12]],"증산고등학교":[[336,344,0,8],[348,359,0,6],[372,383,0,7]],"보광고등학교":[[125,95,30,36],[100,85,15,20],[125,109,16,22]],"양산제일고등학교":[[224,209,15,26],[232,220,12,23],[248,227,21,33]],"효암고등학교":[[290,277,13,27],[290,255,35,49],[310,292,18,33]],"양산여자고등학교":[[280,289,0,5],[290,260,30,44],[310,314,0,11]],"사송고등학교":[[280,260,20,34]],"경남외국어고등학교":[[200,202,0,8],[200,203,0,7],[200,189,11,21]],"양산인공지능고등학교":[[126,129,0,3]],"의령여자고등학교":[[66,69,0,0],[66,58,8,11],[66,64,2,5]],"의령고등학교":[[66,49,17,20],[66,57,9,12],[66,55,11,14]],"신반정보고등학교":[[20,22,0,0],[20,13,7,8],[20,5,15,16]],"군북고등학교":[[48,38,10,12],[50,50,0,2],[50,49,1,3]],"칠원고등학교":[[120,123,0,3],[125,120,5,11],[125,129,0,2]],"함안고등학교":[[144,142,2,9],[150,133,17,24],[150,150,0,7]],"경남로봇고등학교":[[40,39,1,3],[40,36,4,6],[40,37,3,5]],"명덕고등학교":[[115,118,0,2],[115,114,1,6],[115,115,0,5]],"영산고등학교":[[69,68,1,4],[72,59,13,16],[72,69,3,6]],"남지고등학교":[[115,113,2,7],[120,117,3,9],[120,122,0,4]],"창녕고등학교":[[46,43,3,5],[48,41,7,9],[48,42,6,8]],"창녕슈퍼텍고등학교":[[80,78,2,6],[80,56,24,28],[80,61,19,23]],"한국과학기술고등학교":[[80,80,0,4],[80,75,5,9],[80,65,15,19]],"창녕옥야고등학교":[[92,93,0,3],[96,93,3,7],[96,89,7,11]],"창녕여자고등학교":[[109,66,43,48],[60,51,9,12],[112,83,29,34]],"창녕대성고등학교":[[40,39,1,3],[40,39,1,3],[40,30,10,12]],"고성중앙고등학교":[[144,149,0,2],[132,114,18,24],[138,134,4,10]],"철성고등학교":[[96,102,0,0],[88,88,0,4],[92,93,0,3]],"경남항공고등학교":[[140,133,7,14],[140,116,24,31],[160,108,52,60]],"고성고등학교":[[144,128,16,23],[132,117,15,21],[138,99,39,45]],"남해제일고등학교":[[120,120,0,6],[120,110,10,16],[120,114,6,12]],"남해고등학교":[[110,87,23,28],[88,82,6,10],[110,103,7,12]],"남해해성고등학교":[[88,84,4,8],[88,85,3,7],[88,85,3,7]],"경남해양과학고등학교":[[36,34,2,3],[36,32,4,5],[40,34,6,8]],"남해정보산업고등학교":[[40,30,10,12],[40,14,26,28],[40,17,23,25]],"창선고등학교":[[66,55,11,14],[66,61,5,8],[66,49,17,20]],"옥종고등학교":[[22,20,2,3],[22,20,2,3],[22,16,6,7]],"금남고등학교":[[44,28,16,18],[44,27,17,19],[44,36,8,10]],"진교고등학교":[[44,24,20,22],[22,19,3,4],[44,31,13,15]],"하동여자고등학교":[[66,55,11,14],[66,57,9,12],[66,51,15,18]],"하동고등학교":[[66,64,2,5],[44,39,5,7],[88,73,15,19]],"신등고등학교":[[0,0,0,0],[0,0,0,0],[22,6,16,17]],"덕산고등학교":[[23,18,5,6],[22,16,6,7],[22,14,8,9]],"경남간호고등학교":[[60,55,5,8],[60,34,26,29],[60,28,32,35]],"간디고등학교":[[30,31,0,0],[30,30,0,1],[30,30,0,1]],"지리산고등학교":[[15,15,0,0],[15,14,1,1],[15,14,1,1]],"산청고등학교":[[115,115,0,5],[110,114,0,1],[110,105,5,10]],"단성고등학교":[[46,46,0,2],[44,29,15,17],[44,17,27,29]],"함양고등학교":[[110,110,0,5],[110,107,3,8],[110,113,0,2]],"안의고등학교":[[44,38,6,8],[44,37,7,9],[44,32,12,14]],"함양제일고등학교":[[120,87,33,39],[120,86,34,40],[120,100,20,26]],"서상고등학교":[[22,7,15,16],[22,1,21,22],[22,2,20,21]],"거창여자고등학교":[[110,50,60,65],[92,80,12,16],[115,102,13,18]],"거창고등학교":[[88,92,0,0],[92,95,0,1],[92,82,10,14]],"거창대성고등학교":[[154,146,8,15],[161,162,0,7],[161,157,4,12]],"아림고등학교":[[80,76,4,8],[80,58,22,26],[80,72,8,12]],"거창승강기고등학교":[[40,35,5,7],[40,21,19,21],[40,26,14,16]],"거창중앙고등학교":[[154,151,3,10],[161,157,4,12],[161,150,11,19]],"대성일고등학교":[[110,109,1,6],[115,112,3,8],[115,99,16,21]],"야로고등학교":[[40,26,14,16],[20,28,0,0],[40,28,12,14]],"삼가고등학교":[[42,27,15,17],[42,27,15,17],[42,33,9,11]],"합천고등학교":[[66,51,15,18],[66,43,23,26],[66,60,6,9]],"초계고등학교":[[30,33,0,0],[40,14,26,28],[40,27,13,15]],"합천평화고등학교":[[40,25,15,17],[30,24,6,7],[30,25,5,6]],"합천여자고등학교":[[66,38,28,31],[66,68,0,1],[60,60,0,3]]}};
 var OUT_CATS = [
   { k: 'general', n: '일반 전입생(타 시·도 중학교 졸업자 포함)', pct: 5, in10: true },
   { k: 'innov', n: '혁신도시 이전기관 직원 자녀', pct: 5, in10: true },
@@ -692,18 +695,28 @@ function candidateSchools(f) {
   return out;
 }
 
-/* 학교알리미 공시 재적으로 학년별 자리(정원 내 결원) 추정 */
+/* 학년별 자리: 교육청 「학교재적 현황」 우선, 없으면 학교알리미 공시(4월 1일)로 추정 */
 function seatInfo(s, grade) {
+  var gi = (+grade || 1) - 1;
+  var er = s && typeof ENROLL !== 'undefined' && ENROLL && ENROLL.recs ? ENROLL.recs[s.n] : null;
+  if (er && er[gi]) { var r = er[gi]; return { src: 'edu', cap: r[0], cnt: r[1], vacIn: r[2], vacTot: r[3], vac: r[2] }; }
   if (!s || !s.si || !s.si.cnt) return null;
-  var gi = (+grade || 1) - 1, cnt = s.si.cnt[gi], cls = s.si.cls ? s.si.cls[gi] : 0;
+  var cnt = s.si.cnt[gi], cls = s.si.cls ? s.si.cls[gi] : 0;
   var per = s.q && s.c ? Math.round(s.q / s.c) : null, cap = per && cls ? cls * per : null;
-  return { cnt: cnt, cls: cls, per: per, cap: cap, vac: cap != null ? cap - cnt : null };
+  return { src: 'si', cnt: cnt, cls: cls, per: per, cap: cap, vac: cap != null ? cap - cnt : null };
 }
 function seatText(si) {
-  if (!si) return { t: '공시 자료 없음', c: 'na' };
-  if (si.vac == null) return { t: si.cnt + '명(학급수 미상)', c: 'na' };
-  return si.vac > 0 ? { t: '여유 약 ' + si.vac + '명', c: 'ok' } : { t: '정원 내 결원 없음' + (si.vac < 0 ? '(정원 외 ' + (-si.vac) + '명 재적)' : ''), c: 'review' };
+  if (!si) return { t: '자료 없음(학교 문의)', c: 'na' };
+  if (si.src === 'edu') {
+    if (si.vacIn > 0) return { t: '정원 내 결원 ' + si.vacIn + '명(5% 포함 ' + si.vacTot + '명)', c: 'ok' };
+    if (si.vacTot > 0) return { t: '정원 내 결원 없음 · 정원 외(5%) ' + si.vacTot + '명', c: 'review' };
+    return { t: '결원 없음(정원 외 5%도 없음)', c: 'bad' };
+  }
+  if (si.vac == null) return { t: si.cnt + '명(학급수 미상, 공시)', c: 'na' };
+  return si.vac > 0 ? { t: '여유 약 ' + si.vac + '명(공시 추정)', c: 'ok' } : { t: '정원 내 결원 없음(공시 추정)', c: 'review' };
 }
+function seatCount(si) { if (!si) return '-'; return si.src === 'edu' ? si.cnt + '명 / 정원 ' + si.cap : si.cnt + '명 / ' + si.cls + '학급(공시)'; }
+function seatKey(si) { if (!si) return -9999; if (si.src === 'edu') return si.vacIn * 1000 + si.vacTot; return si.vac != null ? si.vac * 1000 : -9000; }
 function evalOut(f, Q, cal) {
   var rows = [], add = function (item, rules, v, st, why, ex) { rows.push({ item: item, rules: rules, v: v, st: st, why: why, ex: ex || null }); };
   var date = f.date, grade = +f.grade, sem = date ? semesterOf(cal, date) : null, nr = f.newRegion, res = f.residence, r = f.reason;
@@ -758,7 +771,7 @@ function evalOut(f, Q, cal) {
 
   var cands = candidateSchools(f);
   cands.forEach(function (c) { c.seat = seatInfo(c, f.grade); });
-  cands.sort(function (a, b) { var ab = (a.st === 'bad') - (b.st === 'bad'); if (ab) return ab; var va = a.seat && a.seat.vac != null ? a.seat.vac : -999, vb = b.seat && b.seat.vac != null ? b.seat.vac : -999; return vb - va; });
+  cands.sort(function (a, b) { var ab = (a.st === 'bad') - (b.st === 'bad'); if (ab) return ab; return seatKey(b.seat) - seatKey(a.seat); });
   var docs = r === 'career' ? ['전입학 배정원서', '주민등록등본', '학교장 추천서(웅천고)', '자기소개서', '성적증명서', '학교생활기록부', 'NEIS 성적 일람표', '특성화고 가산점 증명서(해당자)']
     : r === 'env' ? ['서식1-4 배정원서', '주민등록등본', '서식2 개인정보 동의서', '서식4 학교장 의견서(웅천고)', '서식5 담임 의견서', '서식3 학부모 사유서', '사유별 증빙']
     : isPy ? ['고등학교 전입학 배정원서(평준화지역, 서식1-1, 희망 5개교)', '주민등록등본', '개인정보 동의서(서식2)', '부·모 미이전 시 추가서류(지침 9쪽)']
@@ -1137,7 +1150,7 @@ function renderSheet(kind, f, res) {
     var cs = res.extra.cands;
     var okc = cs.filter(function (c) { return c.st !== 'bad'; });
     cand = '<div class="cand"><div class="cand-h"><span class="gne-stamp">' + h(gneStamp()) + '</span><button type="button" class="btn ghost sm" data-act="gne-refresh">모집정원·현원 새로고침</button></div><b>갈 수 있는 학교(' + okc.length + '곳' + (cs.length > okc.length ? ', 불가 ' + (cs.length - okc.length) + '곳 포함 표시' : '') + ')</b>' +
-      (cs.length ? '<table class="ct"><thead><tr><th>학교</th><th>지역·유형</th><th>성별</th><th>모집정원</th><th>' + f.grade + '학년 현원(공시)</th><th>자리(추정)</th><th>전학 방법</th></tr></thead><tbody>' + cs.map(function (c) { var se = c.seat, sx = seatText(se); return '<tr class="' + (c.st === 'bad' ? 'x' : '') + '"><td>' + h(c.n.replace('고등학교', '고')) + '</td><td>' + h(c.r + ' · ' + c.t) + '</td><td>' + h(c.g) + '</td><td>' + (c.q || '-') + '</td><td>' + (se ? se.cnt + '명 / ' + se.cls + '학급' : '-') + '</td><td class="seat ' + sx.c + '" title="' + (se && se.per ? '학급당 ' + se.per + '명(모집정원÷학급수) × ' + se.cls + '학급 = ' + se.cap + '명 기준' : '') + '">' + h(sx.t) + '</td><td>' + h(c.how) + '</td></tr>'; }).join('') + '</tbody></table><p class="muted">※ 자리(추정) = 해당 학년 학급수 × 학급당 정원(모집정원÷학급수) − 공시 현원. 4월 1일 이후 전출입은 반영되지 않으니 최종 결원은 해당 학교에 확인하세요.</p>' : '<p class="muted">' + (f.newRegion === 'other' ? '타 시·도: 해당 시·도교육청 지침에 따름' : f.newRegion === 'abroad' ? '해외 출국: 전학 대상 학교 없음' : '조건에 맞는 학교가 없습니다') + '</p>') + '</div>';
+      (cs.length ? '<table class="ct"><thead><tr><th>학교</th><th>지역·유형</th><th>성별</th><th>모집정원</th><th>' + f.grade + '학년 현원/정원</th><th>자리(결원)</th><th>전학 방법</th></tr></thead><tbody>' + cs.map(function (c) { var se = c.seat, sx = seatText(se); return '<tr class="' + (c.st === 'bad' ? 'x' : '') + '"><td>' + h(c.n.replace('고등학교', '고')) + '</td><td>' + h(c.r + ' · ' + c.t) + '</td><td>' + h(c.g) + '</td><td>' + (c.q || '-') + '</td><td>' + h(seatCount(se)) + '</td><td class="seat ' + sx.c + '" title="' + (se && se.src === 'si' && se.per ? '학급당 ' + se.per + '명(모집정원÷학급수) × ' + se.cls + '학급 = ' + se.cap + '명 기준 추정' : '') + '">' + h(sx.t) + '</td><td>' + h(c.how) + '</td></tr>'; }).join('') + '</tbody></table><p class="muted">※ 자리(결원) = 경남교육청 「학교재적 현황」(' + h(enrollBase()) + ' 기준)의 정원 내 결원과 정원 외(5%) 포함 결원. 이 자료에 없는 학교만 학교알리미 공시(4월 1일)로 추정합니다. 기준일 이후 전출입은 반영되지 않으니 최종 결원은 해당 학교에 확인하세요.</p>' : '<p class="muted">' + (f.newRegion === 'other' ? '타 시·도: 해당 시·도교육청 지침에 따름' : f.newRegion === 'abroad' ? '해외 출국: 전학 대상 학교 없음' : '조건에 맞는 학교가 없습니다') + '</p>') + '</div>';
   }
   var docs = '<div class="two"><div><b>필요 서류</b><ul>' + res.docs.map(function (d) { return '<li>' + h(d) + '</li>'; }).join('') + '</ul></div><div><b>절차</b><ol>' + res.steps.map(function (d) { return '<li>' + h(d) + '</li>'; }).join('') + '</ol></div></div>';
   var foot = '<div class="sh-foot">※ 이 검토서는 지침·학칙에 따른 사전 점검용이며 최종 허가는 전·편입학심의위원회 심의와 학교장 결정(도교육청 배정 사안은 교육청 결정)에 따릅니다. 거리는 행정복지센터 기준 직선거리(참고), 남은 수업일수는 2026학년도 학사일정 기준 추정입니다.</div>';
@@ -1174,10 +1187,10 @@ function exportHwpx(kind) {
   blocks.push({ type: 'table', cols: [17, 8, 27, 34, 14], rows: rows, head: 1 });
   if (!isIn && res.extra && res.extra.cands.length) {
     blocks.push({ type: 'h', text: '■ 갈 수 있는 학교' });
-    var cr = [[{ v: '학교', bf: 4, cp: 3 }, { v: '지역·유형', bf: 4, cp: 3 }, { v: '성별', bf: 4, cp: 3 }, { v: f.grade + '학년 현원', bf: 4, cp: 3 }, { v: '자리(추정)', bf: 4, cp: 3 }, { v: '전학 방법', bf: 4, cp: 3 }]];
-    res.extra.cands.forEach(function (c) { var se = c.seat, sx = seatText(se); cr.push([{ v: c.n.replace('고등학교', '고') + (c.st === 'bad' ? '(불가)' : ''), al: 'L' }, { v: c.r + ' · ' + c.t, al: 'L' }, { v: c.g }, { v: se ? se.cnt + '명/' + se.cls + '학급' : '-' }, { v: sx.t, bf: sx.c === 'ok' ? 6 : (sx.c === 'review' ? 7 : 3) }, { v: c.how, al: 'L' }]); });
+    var cr = [[{ v: '학교', bf: 4, cp: 3 }, { v: '지역·유형', bf: 4, cp: 3 }, { v: '성별', bf: 4, cp: 3 }, { v: f.grade + '학년 현원/정원', bf: 4, cp: 3 }, { v: '자리(결원)', bf: 4, cp: 3 }, { v: '전학 방법', bf: 4, cp: 3 }]];
+    res.extra.cands.forEach(function (c) { var se = c.seat, sx = seatText(se); cr.push([{ v: c.n.replace('고등학교', '고') + (c.st === 'bad' ? '(불가)' : ''), al: 'L' }, { v: c.r + ' · ' + c.t, al: 'L' }, { v: c.g }, { v: seatCount(se) }, { v: sx.t, bf: sx.c === 'ok' ? 6 : (sx.c === 'review' ? 7 : 3) }, { v: c.how, al: 'L' }]); });
     blocks.push({ type: 'table', cols: [15, 22, 6, 13, 14, 30], rows: cr, head: 1 });
-    blocks.push({ type: 'p', cp: 5, text: gneStamp() + '. 자리(추정) = 학급수 × 학급당 정원(모집정원÷학급수) − 공시 현원.' });
+    blocks.push({ type: 'p', cp: 5, text: gneStamp() + '. 자리(결원)는 교육청 학교재적 현황 기준(없는 학교는 공시 추정).' });
   }
   blocks.push({ type: 'h', text: '■ 필요 서류' });
   blocks.push({ type: 'p', cp: 2, text: res.docs.join(' / ') });
@@ -1204,7 +1217,7 @@ function exportResultXlsx(kind) {
   res.rows.forEach(function (x) { rows.push([{ v: x.item, s: 2 }, { v: stLabel(x), s: ST_XLS[x.st] }, { v: x.v, s: 2 }, { v: x.why, s: 2 }, { v: x.rules.map(function (id) { return RULES[id].t; }).join('\n'), s: 2 }]); });
   rows.push([]); rows.push([{ v: '필요 서류', s: 1 }, { v: res.docs.join('\n'), s: 2 }]); rows.push([{ v: '절차', s: 1 }, { v: res.steps.map(function (s, k) { return (k + 1) + ') ' + s; }).join('\n'), s: 2 }]);
   var sheets = [{ name: '검토서', cols: [24, 12, 40, 55, 34], rows: rows }];
-  if (!isIn && res.extra) sheets.push({ name: '갈 수 있는 학교', cols: [24, 10, 26, 7, 10, 12, 9, 12, 20, 44], freeze: 2, rows: [[{ v: gneStamp(), s: 1 }], ['학교', '지역', '유형', '성별', '모집정원', f.grade + '학년 현원', '학급수', '학급당 정원', '자리(추정)', '전학 방법'].map(function (x) { return { v: x, s: 1 }; })].concat(res.extra.cands.map(function (c) { var se = c.seat, sx = seatText(se); return [{ v: c.n + (c.st === 'bad' ? '(불가)' : ''), s: 2 }, { v: c.r, s: 2 }, { v: c.t, s: 2 }, { v: c.g, s: 2 }, { v: c.q || '', s: 2 }, { v: se ? se.cnt : '', s: 2 }, { v: se ? se.cls : '', s: 2 }, { v: se && se.per ? se.per : '', s: 2 }, { v: sx.t, s: ST_XLS[sx.c] || 2 }, { v: c.how, s: 2 }]; })) });
+  if (!isIn && res.extra) sheets.push({ name: '갈 수 있는 학교', cols: [24, 10, 26, 7, 10, 9, 9, 12, 14, 32, 22, 44], freeze: 2, rows: [[{ v: gneStamp(), s: 1 }], ['학교', '지역', '유형', '성별', '모집정원', f.grade + '학년 정원', '현원', '정원 내 결원', '5% 포함 결원', '자리(결원)', '자료', '전학 방법'].map(function (x) { return { v: x, s: 1 }; })].concat(res.extra.cands.map(function (c) { var se = c.seat, sx = seatText(se), ed = se && se.src === 'edu'; return [{ v: c.n + (c.st === 'bad' ? '(불가)' : ''), s: 2 }, { v: c.r, s: 2 }, { v: c.t, s: 2 }, { v: c.g, s: 2 }, { v: c.q || '', s: 2 }, { v: se && se.cap != null ? se.cap : '', s: 2 }, { v: se ? se.cnt : '', s: 2 }, { v: ed ? se.vacIn : (se && se.vac != null ? se.vac : ''), s: 2 }, { v: ed ? se.vacTot : '', s: 2 }, { v: sx.t, s: ST_XLS[sx.c] || 2 }, { v: !se ? '' : ed ? '교육청 재적 현황(' + enrollBase() + ')' : '학교알리미 공시 추정', s: 2 }, { v: c.how, s: 2 }]; })) });
   var used = {}; res.rows.forEach(function (x) { x.rules.forEach(function (id) { used[id] = 1; }); });
   sheets.push({ name: '근거 규정 원문', cols: [14, 34, 12, 30, 110], rows: [['구분', '조항', '출처', '관련 항목', '원문'].map(function (x) { return { v: x, s: 1 }; })].concat(pickedRules(kind, res).map(function (c) { var r = RULES[c.id], tg = RTAG[c.worst] || RTAG.info; return [{ v: tg[0], s: ST_XLS[c.worst] }, { v: r.t, s: 2 }, { v: r.p, s: 2 }, { v: c.items.map(function (x) { return itemShort(x) + '(' + stLabel(x) + ')'; }).join('\n'), s: 2 }, { v: r.x, s: 2 }]; })) });
   download(XLSX.build(sheets), '웅천고_' + (isIn ? '전입' : '전출') + '_검토결과_' + (f.name || '학생') + '_' + today() + '.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -1242,8 +1255,8 @@ function exportBaseXlsx() {
 function renderData(which) {
   var el = $('#dataBody'), html = ''; el.oninput = null; el.onchange = null;
   if (which === 'quota') {
-    html = '<p class="note">학적 담당이 나이스 기준으로 숫자를 고치면 이 브라우저에 저장되어 판정에 바로 반영됩니다. 기본값은 2026 공시 재적(1학년 212·2학년 200·3학년 213명)으로 만든 <b>추정</b>입니다.</p>' +
-      (function () { var w = GNE.filter(function (x) { return x.n === '웅천고등학교'; })[0]; return w && w.si ? '<p class="note">참고: 학교알리미 ' + (GNE_META.siYear || '') + ' 공시 웅천고 재적 1학년 ' + w.si.cnt[0] + '명(' + w.si.cls[0] + '학급), 2학년 ' + w.si.cnt[1] + '명(' + w.si.cls[1] + '학급), 3학년 ' + w.si.cnt[2] + '명(' + w.si.cls[2] + '학급), 특수학급 ' + w.si.sp + '명. 정원 내·외 구분은 나이스로 확인하세요.</p>' : ''; })() + '<label class="fld inline"><span>기준일·비고</span><input id="qBase" value="' + h(Q.baseDate) + '"></label>' +
+    html = '<p class="note">학적 담당이 나이스 기준으로 숫자를 고치면 이 브라우저에 저장되어 판정에 바로 반영됩니다. 기본값은 2026. 10. 14. 학생 현황(1학년 211·2학년 196·3학년 214명)과 교육청 학교재적 현황의 정원으로 넣었고, 1학년 정원 외 1명은 유형을 몰라 「일반 전입」에 넣었습니다.</p>' +
+      (function () { var er = ENROLL && ENROLL.recs ? ENROLL.recs['웅천고등학교'] : null; if (!er) return ''; return '<div class="note"><b>경남교육청 학교재적 현황(' + h(enrollBase()) + ' 기준) 웅천고</b><br>' + er.map(function (r, i) { return (i + 1) + '학년 정원 ' + r[0] + ' · 현원 ' + r[1] + ' · 정원 내 결원 ' + r[2] + ' · 5% 포함 결원 ' + r[3]; }).join('<br>') + '<br><button type="button" class="btn sm" data-act="fill-enroll" style="margin-top:6px">이 값으로 정원·현원 채우기</button> <span class="muted">정원 외 인원은 유형을 알 수 없어 「일반 전입」에 넣습니다. 나이스로 유형을 확인해 고치세요.</span></div>'; })() + '<label class="fld inline"><span>기준일·비고</span><input id="qBase" value="' + h(Q.baseDate) + '"></label>' +
       '<div class="scroll"><table class="dt edit"><thead><tr><th>구분</th><th>1학년</th><th>2학년</th><th>3학년</th></tr></thead><tbody>' +
       '<tr><th>입학정원</th>' + [1, 2, 3].map(function (g) { return '<td><input type="number" data-q="' + g + '.ent" value="' + Q.g[g].ent + '"></td>'; }).join('') + '</tr>' +
       '<tr><th>정원 내 재적</th>' + [1, 2, 3].map(function (g) { return '<td><input type="number" data-q="' + g + '.inside" value="' + Q.g[g].inside + '"></td>'; }).join('') + '</tr>' +
@@ -1266,7 +1279,7 @@ function renderData(which) {
   } else if (which === 'jinhae') {
     html = '<p class="note">진해구 일반고는 모두 비평준화(학교장 전형). 거리는 행정복지센터 기준 직선거리(참고). 진해신항고는 2027.3.1. 개교 예정(위치는 진해신항중 옆 근사).</p><div class="gne-bar"><span class="gne-stamp">' + h(gneStamp()) + '</span><button type="button" class="btn sm" data-act="gne-refresh">모집정원·현원 새로고침</button></div><div class="scroll"><table class="dt"><thead><tr><th>학교</th><th>성별</th><th>주소</th><th>모집정원</th></tr></thead><tbody>' +
       JINHAE.map(function (s) { return '<tr><td>' + s.n + '</td><td>' + s.g + '</td><td>' + h(s.addr) + '</td><td>' + s.q + '</td></tr>'; }).join('') + '</tbody></table></div>' +
-      '<h4>학년별 현원과 자리(추정)</h4><div class="scroll"><table class="dt"><thead><tr><th>학교</th><th>1학년</th><th>2학년</th><th>3학년</th></tr></thead><tbody>' + JINHAE.map(function (j) { var s = GNE.filter(function (x) { return x.n === j.n; })[0]; return '<tr><td>' + j.s + '</td>' + [1, 2, 3].map(function (g) { var se = seatInfo(s, g), sx = seatText(se); return '<td>' + (se ? se.cnt + '명/' + se.cls + '학급 · <span class="seat ' + sx.c + '">' + h(sx.t) + '</span>' : '공시 자료 없음') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div><p class="muted">자리(추정) = 학급수 × 학급당 정원(모집정원÷학급수) − 공시 현원. 웅천고는 정원·현원 탭의 나이스 값이 판정에 쓰입니다.</p>' +
+      '<h4>학년별 현원과 자리(교육청 재적 현황 ' + h(enrollBase()) + ' 기준)</h4><div class="scroll"><table class="dt"><thead><tr><th>학교</th><th>1학년</th><th>2학년</th><th>3학년</th></tr></thead><tbody>' + JINHAE.map(function (j) { var s = GNE.filter(function (x) { return x.n === j.n; })[0]; return '<tr><td>' + j.s + '</td>' + [1, 2, 3].map(function (g) { var se = seatInfo(s, g), sx = seatText(se); return '<td>' + (se ? h(seatCount(se)) + ' · <span class="seat ' + sx.c + '">' + h(sx.t) + '</span>' : '공시 자료 없음') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div><p class="muted">자리(추정) = 학급수 × 학급당 정원(모집정원÷학급수) − 공시 현원. 웅천고는 정원·현원 탭의 나이스 값이 판정에 쓰입니다.</p>' +
       '<h4>행정동별 직선거리(km)</h4><div class="scroll"><table class="dt"><thead><tr><th>행정동</th>' + JINHAE.map(function (s) { return '<th>' + s.s + '</th>'; }).join('') + '</tr></thead><tbody>' +
       DONGS.map(function (d) { var ds = JINHAE.map(function (s) { return hav(d[1], d[2], s.lat, s.lng); }), mn = Math.min.apply(null, ds); return '<tr><td>' + d[0] + (d[3] === '근사' ? '*' : '') + '</td>' + ds.map(function (x, i) { return '<td class="c' + (x === mn ? ' best' : '') + (JINHAE[i].me ? ' me' : '') + '">' + x.toFixed(1) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div><p class="muted">* 근사 좌표. 진하게 표시 = 가장 가까운 학교(성별 제한 반영 전).</p>';
   } else if (which === 'gne') {
@@ -1328,7 +1341,8 @@ function applyGne(list, meta) {
   return true;
 }
 function loadGneCache() { try { var c = JSON.parse(localStorage.getItem(GNE_LS) || 'null'); if (c && c.schools && c.siYear && String(c.updated) > String(GNE_META.updated)) applyGne(c.schools, { updated: c.updated, from: '저장된 값', siYear: c.siYear }); } catch (e) { } }
-function gneStamp() { return '모집정원·현원 기준: ' + GNE_META.updated + ' 수집 · 모집정원 고입포털, 현원 ' + (GNE_META.siYear ? '학교알리미 ' + GNE_META.siYear + ' 공시(4월 1일 기준)' : '자료 없음') + ' · ' + GNE_META.from; }
+function enrollBase() { return ENROLL && ENROLL.base ? ENROLL.base : '-'; }
+function gneStamp() { return '현원·결원: 경남교육청 학교재적 현황(' + enrollBase() + ' 기준) · 모집정원: 고입포털(' + GNE_META.updated + ' 수집) · 재적 현황에 없는 학교는 학교알리미 ' + (GNE_META.siYear || '') + ' 공시'; }
 function paintGneStamp(msg, cls) { $$('.gne-stamp').forEach(function (el) { el.textContent = msg || gneStamp(); el.className = 'gne-stamp ' + (cls || ''); }); }
 var GNE_BUSY = false;
 function refreshGne(force) {
@@ -1341,6 +1355,72 @@ function refreshGne(force) {
     paintGneStamp(gneStamp() + ' (' + j.count + '교)', 'ok');
     rerun(); var on = $('.sub.on'); if (on && ['gne', 'jinhae'].indexOf(on.getAttribute('data-sub')) >= 0) renderData(on.getAttribute('data-sub'));
   }).catch(function (e) { GNE_BUSY = false; paintGneStamp(gneStamp() + ' · 새로고침 실패(인터넷 연결 확인): ' + e.message, 'warn'); });
+}
+
+/* ---------- 교육청 학교재적 현황(PDF) ---------- */
+var ENR_LS = 'wc-transfer-enroll-v1', ENR_BUSY = false;
+function loadEnrollCache() { try { var c = JSON.parse(localStorage.getItem(ENR_LS) || 'null'); if (c && c.recs && c.docNo && (!ENROLL || String(c.docNo) > String(ENROLL.docNo))) ENROLL = c; } catch (e) { } }
+function parseEnrollLines(lines) {
+  var recs = {}, base = '';
+  lines.forEach(function (l) {
+    var b = l.match(/재적\s*현황\s*\((\d{4}\.\s*\d{1,2}\.\s*\d{1,2}\.)\s*기준\)/); if (b && !base) base = b[1].replace(/\s+/g, ' ');
+    var m = l.match(/(?:^|\s)(\d{1,3})\s+(\S+?(?:고등학교|학교))\s+((?:(?:\d+|-)\s*)+)$/); if (!m) return;
+    var t = m[3].trim().split(/\s+/), g = [], n = function (v) { return v === '-' ? 0 : +v; };
+    for (var i = 0; i + 3 < t.length && g.length < 3; i += 4) g.push([n(t[i]), n(t[i + 1]), n(t[i + 2]), n(t[i + 3])]);
+    if (g.length) recs[m[2]] = g;
+  });
+  return { base: base, recs: recs };
+}
+function loadPdfJs() {
+  if (window.pdfjsLib) return Promise.resolve();
+  return new Promise(function (res, rej) { var s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js'; s.onload = function () { pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; res(); }; s.onerror = rej; document.head.appendChild(s); });
+}
+function pdfLines(b64) {
+  var bin = atob(b64), u8 = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+  return pdfjsLib.getDocument({ data: u8 }).promise.then(function (doc) {
+    var lines = [], p = 1;
+    function next() {
+      if (p > doc.numPages) return lines;
+      return doc.getPage(p++).then(function (pg) { return pg.getTextContent(); }).then(function (tc) {
+        var rows = {};
+        tc.items.forEach(function (it) { if (!it.str.trim()) return; var y = Math.round(it.transform[5]); var key = Object.keys(rows).filter(function (k) { return Math.abs(k - y) <= 2; })[0]; if (key == null) key = y; (rows[key] = rows[key] || []).push({ x: it.transform[4], s: it.str }); });
+        Object.keys(rows).sort(function (a, b) { return b - a; }).forEach(function (k) { lines.push(rows[k].sort(function (a, b) { return a.x - b.x; }).map(function (o) { return o.s; }).join(' ').replace(/\s+/g, ' ').trim()); });
+        return next();
+      });
+    }
+    return next();
+  });
+}
+function refreshEnroll(force) {
+  if (ENR_BUSY) return; ENR_BUSY = true;
+  fetch(GNE_PROXY + '?enroll=meta' + (force ? '&force=1' : '')).then(function (r) { return r.json(); }).then(function (m) {
+    if (!m.ok) throw new Error(m.error || '목록 없음');
+    if (ENROLL && String(ENROLL.docNo) === String(m.docNo)) { ENR_BUSY = false; return; }
+    paintGneStamp('교육청 새 재적 현황(' + m.title + ')을 읽는 중…', 'busy');
+    return fetch(GNE_PROXY + '?enroll=pdf&doc=' + m.docNo).then(function (r) { return r.json(); }).then(function (j) {
+      if (!j.ok || !j.pdf) throw new Error(j.error || 'PDF 없음');
+      return loadPdfJs().then(function () { return pdfLines(j.pdf); }).then(function (lines) {
+        var p = parseEnrollLines(lines); if (Object.keys(p.recs).length < 100) throw new Error('재적 현황 해석 실패');
+        ENROLL = { docNo: m.docNo, title: m.title, base: p.base || m.title, recs: p.recs, page: m.page };
+        try { localStorage.setItem(ENR_LS, JSON.stringify(ENROLL)); } catch (e) { }
+        ENR_BUSY = false; paintGneStamp(gneStamp(), 'ok'); rerun();
+        var on = $('.sub.on'); if (on && ['gne', 'jinhae', 'quota'].indexOf(on.getAttribute('data-sub')) >= 0) renderData(on.getAttribute('data-sub'));
+      });
+    });
+  }).catch(function (e) { ENR_BUSY = false; paintGneStamp(gneStamp() + ' · 교육청 재적 현황 갱신 실패: ' + e.message, 'warn'); });
+}
+function fillFromEnroll() {
+  var er = ENROLL && ENROLL.recs ? ENROLL.recs['웅천고등학교'] : null; if (!er) return;
+  if (!confirm('교육청 학교재적 현황(' + enrollBase() + ' 기준)으로 웅천고 학년별 정원·정원 내 재적·정원 외 인원을 채울까요?')) return;
+  er.forEach(function (r, i) {
+    var g = Q.g[i + 1], cap5 = Math.floor(r[0] * 0.05);
+    g.ent = r[0]; g.inside = r[0] - r[2];
+    var outNow = Math.max(0, cap5 - (r[3] - r[2]));
+    var other = 0; OUT_CATS.forEach(function (c) { if (c.in10 && c.k !== 'general') other += +g.out[c.k] || 0; });
+    g.out.general = Math.max(0, outNow - other);
+  });
+  Q.baseDate = '교육청 학교재적 현황 ' + enrollBase() + ' 기준';
+  saveBase(); renderData('quota'); rerun();
 }
 
 /* ---------- 주소 → 좌표 → 거리 ---------- */
@@ -1424,6 +1504,7 @@ function openRule(id) {
 document.addEventListener('DOMContentLoaded', function () {
   loadBase();
   loadGneCache();
+  loadEnrollCache();
   buildForm($('#fIn'), FIELDS_IN, function () { run('in'); });
   buildForm($('#fOut'), FIELDS_OUT, function () { run('out'); });
   rerun();
@@ -1443,7 +1524,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var a = e.target.closest('[data-act]'); if (!a) return;
     var act = a.getAttribute('data-act');
     if (act === 'geo') geocodeAddr();
-    if (act === 'gne-refresh') refreshGne(true);
+    if (act === 'gne-refresh') { refreshGne(true); refreshEnroll(true); }
+    if (act === 'fill-enroll') fillFromEnroll();
     if (act === 'print') window.print();
     if (act === 'pick-key' || act === 'pick-all' || act === 'pick-none') { var kd5 = a.closest('#sIn') ? 'in' : 'out'; STATE[kd5].pick = {}; if (act !== 'pick-key') citedRules(STATE[kd5].res).forEach(function (c) { STATE[kd5].pick[c.id] = act === 'pick-all'; }); run(kd5); }
     if (act === 'open-all' || act === 'close-all') { var sh2 = a.closest('.sheet'), kd4 = sh2.id === 'sIn' ? 'in' : 'out'; $$('details.rd', sh2).forEach(function (d) { d.open = act === 'open-all'; STATE[kd4].open[d.getAttribute('data-rid')] = d.open; }); }
@@ -1461,6 +1543,7 @@ document.addEventListener('DOMContentLoaded', function () {
   window.addEventListener('afterprint', function () { printOpened.forEach(function (d) { d.removeAttribute('open'); }); printOpened = []; });
   showTab('in');
   refreshGne(false);
+  refreshEnroll(false);
 });
 
 </script>
