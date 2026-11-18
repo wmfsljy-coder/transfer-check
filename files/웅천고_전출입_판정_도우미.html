@@ -1,0 +1,1454 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>웅천고 전·출입 판정 도우미</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<style>
+:root{--ink:#111827;--mut:#4b5563;--line:#cbd5e1;--bg:#f3f5f9;--nav:#0b2a5b;--ok:#0f7a36;--okb:#dcf3e3;--bad:#b4121b;--badb:#ffe0e0;--rv:#8a5a00;--rvb:#fff1c7;--inf:#1d4ed8;--infb:#e1ecff;--na:#6b7280;--nab:#f1f2f4}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Malgun Gothic","맑은 고딕","Apple SD Gothic Neo",sans-serif;color:var(--ink);background:var(--bg);font-size:14px;line-height:1.45}
+header.top{background:var(--nav);color:#fff;padding:12px 20px;display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+header.top h1{margin:0;font-size:20px}
+header.top small{opacity:.85}
+nav.tabs{display:flex;gap:6px;padding:10px 20px 0;background:#e4e8f0;border-bottom:3px solid var(--nav);flex-wrap:wrap}
+.tab{border:2px solid #94a3b8;border-bottom:none;background:#fff;color:#1f2937;padding:10px 18px;font-size:15px;font-weight:700;border-radius:8px 8px 0 0;cursor:pointer}
+.tab.on{background:var(--nav);border-color:var(--nav);color:#fff;box-shadow:0 -3px 0 #f59e0b inset}
+.tab:not(.on):hover{background:#f1f5f9}
+.spacer{flex:1}
+.btn{border:2px solid var(--nav);background:var(--nav);color:#fff;font-weight:700;padding:7px 12px;border-radius:7px;cursor:pointer;font-size:13px}
+.btn.ghost{background:#fff;color:var(--nav)}
+.btn.hwp{background:#1565c0;border-color:#1565c0}.btn.xls{background:#15803d;border-color:#15803d}
+.pane{padding:16px 20px}
+.grid{display:grid;grid-template-columns:minmax(280px,360px) 1fr;gap:16px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+form.panel{background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;position:sticky;top:8px;max-height:calc(100vh - 16px);overflow:auto}
+form.panel h3{margin:0 0 8px;font-size:15px}
+.fld{display:block;margin:0 0 8px}
+.fld span{display:block;font-size:12px;color:var(--mut);margin-bottom:2px;font-weight:600}
+.fld input,.fld select{width:100%;padding:7px 8px;border:1px solid #9aa6b8;border-radius:6px;font-size:14px;background:#fff;color:var(--ink)}
+.fld input:focus,.fld select:focus{outline:2px solid #f59e0b;border-color:var(--nav)}
+.fld.inline{max-width:420px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
+.toolbar .muted{margin-left:auto}
+.sheet{background:#fff;border:1px solid var(--line);border-radius:10px;padding:16px 18px;max-width:1000px}
+.sh-head h2{margin:0;font-size:19px;text-align:center}
+.sh-meta{text-align:center;color:var(--mut);font-size:11.5px;margin:3px 0 8px}
+table{border-collapse:collapse;width:100%}
+.kv th,.kv td,.ck th,.ck td,.ct th,.ct td,.dt th,.dt td{border:1px solid #94a3b8;padding:4px 6px;vertical-align:top;font-size:12.5px;text-align:left}
+.kv th,.ck th,.ct th,.dt th{background:#e8ecf3;font-weight:700;white-space:nowrap}
+.kv th{width:12%}
+.verdict{margin:10px 0 8px;padding:10px 14px;border-radius:8px;border:3px solid;display:flex;gap:14px;align-items:baseline;flex-wrap:wrap}
+.verdict b{font-size:22px}
+.verdict.ok{border-color:var(--ok);background:var(--okb);color:var(--ok)}
+.verdict.bad{border-color:var(--bad);background:var(--badb);color:var(--bad)}
+.verdict.review{border-color:#b7791f;background:var(--rvb);color:var(--rv)}
+.badbox,.pendbox{border-left:6px solid var(--bad);background:#fff5f5;padding:6px 10px;margin:0 0 8px;font-size:13px}
+.pendbox{border-color:#b7791f;background:#fffbeb}
+.badbox ol,.pendbox ol{margin:4px 0 0;padding-left:20px}
+.cite{color:var(--mut);font-size:12px}
+td.st{font-weight:800;text-align:center;white-space:nowrap}
+td.st.ok{background:var(--okb);color:var(--ok)}td.st.bad{background:var(--badb);color:var(--bad)}td.st.review,td.st.check{background:var(--rvb);color:var(--rv)}td.st.info,td.st.step{background:var(--infb);color:var(--inf)}td.st.na{background:var(--nab);color:var(--na)}
+tr.r-na td{color:#6b7280}
+.rc{border:1px solid #64748b;background:#f8fafc;border-radius:4px;font-size:11px;padding:1px 4px;margin:1px 0;cursor:pointer;color:#0b2a5b;font-weight:700}
+.rc:hover{background:#fde68a}
+.cand{margin:10px 0}
+td.seat.ok,.seat.ok{color:#0f7a36;font-weight:800}td.seat.ok{background:var(--okb)}td.seat.review,.seat.review{color:#8a5a00;font-weight:700}td.seat.review{background:var(--rvb)}td.seat.na,.seat.na{color:#6b7280}
+.cand-h,.gne-bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.gne-stamp{font-size:12px;color:var(--mut)}.gne-stamp.ok{color:#0f7a36;font-weight:700}.gne-stamp.warn{color:#b4121b;font-weight:700}.gne-stamp.busy{color:#8a5a00;font-weight:700}
+.addrbox{display:flex;gap:6px}.addrbox input{flex:1}
+.geo-msg{font-size:12px;margin-top:3px}.geo-msg.ok-msg{color:#0f7a36;font-weight:700}.geo-msg.warn-msg{color:#b4121b;font-weight:700}
+.geo-cands{list-style:none;margin:4px 0;padding:0;display:flex;flex-direction:column;gap:3px}
+.geo-cands button{width:100%;text-align:left;border:1px solid #94a3b8;background:#fff;border-radius:5px;padding:3px 6px;font-size:12px;cursor:pointer}
+.geo-cands button.on{border-color:#0b2a5b;background:#dbeafe;font-weight:700}
+.geomap{height:230px;border:2px solid #0b2a5b;border-radius:8px;margin-top:6px}
+.sch-tip{font-size:11px;font-weight:700;padding:1px 4px}
+.rulesec{margin-top:14px;border-top:3px solid var(--nav);padding-top:8px}
+.rs-head{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;margin-bottom:6px}
+.rs-head b{font-size:15px}.rs-sub{color:var(--mut);font-size:12px}
+.rs-btns{margin-left:auto;display:flex;gap:6px;align-items:center}
+.btn.sm{padding:4px 9px;font-size:12px}
+.rs-print{font-size:12px;font-weight:700;display:flex;gap:4px;align-items:center}
+details.rd{border:1px solid #94a3b8;border-left-width:6px;border-radius:6px;margin:0 0 6px;background:#fff}
+details.rd.w-bad{border-left-color:var(--bad)}details.rd.w-review{border-left-color:#b7791f}details.rd.w-ok{border-left-color:var(--ok)}details.rd.w-info,details.rd.w-na{border-left-color:#64748b}
+details.rd summary{cursor:pointer;padding:6px 8px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;font-size:13px;list-style-position:inside}
+details.rd[open] summary{background:#f1f5f9;border-bottom:1px solid #cbd5e1}
+details.rd .tag{font-size:11px;font-weight:800;padding:1px 6px;border-radius:4px}
+.tag.bad{background:var(--badb);color:var(--bad)}.tag.review{background:var(--rvb);color:var(--rv)}.tag.ok{background:var(--okb);color:var(--ok)}.tag.info,.tag.na{background:var(--infb);color:var(--inf)}
+.rel{font-size:12px;color:var(--mut);width:100%}
+.rel i{font-style:normal;font-weight:700;margin-left:3px;padding:0 3px;border-radius:3px}
+.rel i.s-bad{color:var(--bad);background:var(--badb)}.rel i.s-review,.rel i.s-check{color:var(--rv);background:var(--rvb)}.rel i.s-ok{color:var(--ok);background:var(--okb)}.rel i.s-step,.rel i.s-info{color:var(--inf);background:var(--infb)}.rel i.s-na{color:var(--na)}
+.rd-body{padding:6px 10px 8px}
+.rd-why{font-size:12.5px;background:#fffbeb;border-left:3px solid #b7791f;padding:3px 7px;margin-bottom:4px}
+.rd-body pre{white-space:pre-wrap;font-family:inherit;font-size:13px;line-height:1.55;margin:6px 0 0}
+details.rd.flash{outline:3px solid #f59e0b}
+.golink{border:1px solid #b4121b;background:#fff;color:#b4121b;font-size:11px;font-weight:700;border-radius:4px;padding:0 5px;cursor:pointer;margin-left:4px}
+.exb{display:flex;gap:6px;align-items:flex-start;margin-top:5px;padding:4px 6px;border:2px dashed #2563eb;border-radius:6px;background:#eff6ff;color:#1e3a8a;font-weight:700;font-size:12px;cursor:pointer}
+.exb input{width:17px;height:17px;margin:0;flex:none;accent-color:#1d4ed8}
+.exb.on{border-style:solid;background:#dbeafe}
+tr.exd td.st{background:#c7f0d4;color:#065f2c;outline:2px solid #15803d;outline-offset:-2px}
+.exbox{border-left:6px solid #1d4ed8;background:#eff6ff;padding:6px 10px;margin:0 0 8px;font-size:13px}
+.exbox ol{margin:4px 0 0;padding-left:20px}
+.ct tr.x td{color:#9ca3af;text-decoration:line-through}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;font-size:12.5px}
+.two ul,.two ol{margin:4px 0;padding-left:18px}
+.sh-foot{margin-top:10px;font-size:11px;color:var(--mut);border-top:1px dashed var(--line);padding-top:6px}
+.muted{color:var(--mut);font-size:12px}
+.note{background:#eef4ff;border:1px solid #c7d7fe;padding:8px 10px;border-radius:6px}
+.subs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.sub{border:2px solid #94a3b8;background:#fff;padding:6px 12px;border-radius:999px;font-weight:700;cursor:pointer}
+.sub.on{background:#f59e0b;border-color:#b45309;color:#111}
+.dt td.c{text-align:center}.dt td.best{font-weight:800;background:#dcf3e3}.dt td.me{outline:2px solid var(--nav)}
+.dt tr.sum td{font-weight:700;background:#f8fafc}
+.dt.edit input{width:80px;padding:3px 5px;border:1px solid #9aa6b8;border-radius:4px}
+.scroll{overflow:auto;max-width:100%;margin-bottom:10px}.scroll.tall{max-height:70vh}
+.row3{display:grid;grid-template-columns:repeat(3,minmax(160px,240px));gap:10px}
+.rule{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:8px}
+.rule pre,dialog pre{white-space:pre-wrap;font-family:inherit;margin:6px 0 0;font-size:13px}
+ol.warn li{margin-bottom:6px}
+dialog{max-width:760px;width:92vw;border:3px solid var(--nav);border-radius:10px;padding:14px}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.datab{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px}
+@media print{
+  @page{size:A4;margin:9mm}
+  body{background:#fff;font-size:10px}
+  header.top,nav.tabs,form.panel,.toolbar,#tab-data,dialog{display:none!important}
+  body[data-tab="in"] #tab-out,body[data-tab="out"] #tab-in{display:none!important}
+  body[data-tab="data"] .pane{display:none!important}
+  .pane{padding:0}.grid{display:block}
+  .sheet{border:none;padding:0;max-width:none}
+  .kv th,.kv td,.ck th,.ck td,.ct th,.ct td{font-size:9px;padding:2px 4px}
+  .verdict{padding:5px 10px;margin:5px 0}.verdict b{font-size:16px}
+  .badbox,.pendbox,.two{font-size:9.5px}
+  .rc{border:none;background:none;padding:0;font-size:8.5px}
+  .exb{display:none!important}
+  .golink,.rs-btns .btn,.rs-print,[data-act=gne-refresh]{display:none!important}
+  body.np-in #sIn .rulesec,body.np-out #sOut .rulesec{display:none!important}
+  details.rd{break-inside:auto}.rd-body pre{font-size:9.5px}details.rd summary{font-size:10px}
+  .exbox{font-size:9.5px}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body data-tab="in">
+<header class="top"><h1>웅천고 전·출입 판정 도우미</h1><small>2026학년도 경남 전·편입학 업무 시행 지침 · 웅천고 규정집(2026.7.20.) 기준 · 기초자료 수집 2026-11-18</small></header>
+<nav class="tabs" role="tablist">
+  <button class="tab on" data-tab="in" role="tab">① 전입 판정 (다른 학교 → 웅천고)</button>
+  <button class="tab" data-tab="out" role="tab">② 전출 판정 (웅천고 → 다른 학교)</button>
+  <button class="tab" data-tab="data" role="tab">③ 기초자료·규정 원문</button>
+  <span class="spacer"></span>
+  <button class="btn xls" data-act="xlsx-base" style="margin-bottom:6px">기초자료 엑셀 받기</button>
+</nav>
+<main>
+<section class="pane" id="tab-in">
+  <div class="grid">
+    <form class="panel" id="fIn" onsubmit="return false"></form>
+    <div>
+      <div class="toolbar"><button class="btn" data-act="print">인쇄 / PDF</button><button class="btn hwp" data-act="hwpx-in">한글(HWPX) 받기</button><button class="btn xls" data-act="xlsx-in">엑셀 받기</button><button class="btn ghost" data-act="reset-in">입력 초기화</button><span class="muted">입력하면 바로 다시 판정합니다. 학생 정보는 저장되지 않습니다.</span></div>
+      <div class="sheet" id="sIn"></div>
+    </div>
+  </div>
+</section>
+<section class="pane" id="tab-out" hidden>
+  <div class="grid">
+    <form class="panel" id="fOut" onsubmit="return false"></form>
+    <div>
+      <div class="toolbar"><button class="btn" data-act="print">인쇄 / PDF</button><button class="btn hwp" data-act="hwpx-out">한글(HWPX) 받기</button><button class="btn xls" data-act="xlsx-out">엑셀 받기</button><button class="btn ghost" data-act="reset-out">입력 초기화</button><span class="muted">새 거주지 학군·성별에 맞는 학교를 아래에 보여 줍니다.</span></div>
+      <div class="sheet" id="sOut"></div>
+    </div>
+  </div>
+</section>
+<section class="pane" id="tab-data" hidden>
+  <div class="subs">
+    <button class="sub on" data-sub="quota">정원·현원(수정 가능)</button>
+    <button class="sub" data-sub="cal">학사일정·수업일수</button>
+    <button class="sub" data-sub="curr">교육과정 편성표</button>
+    <button class="sub" data-sub="jinhae">진해 고교·거리</button>
+    <button class="sub" data-sub="gne">경남 고교 목록</button>
+    <button class="sub" data-sub="rules">규정 원문</button>
+    <button class="sub" data-sub="src">출처·확인할 점</button>
+  </div>
+  <div class="datab" id="dataBody"></div>
+</section>
+</main>
+<dialog id="dlg"><b id="dlgT"></b><pre id="dlgX"></pre><div style="text-align:right;margin-top:10px"><button class="btn" id="dlgClose">닫기</button></div></dialog>
+<script>
+/* ===== 기초자료 (2026-11-18 수집) ===== */
+var META = {
+  built: '2026-11-18',
+  sources: [
+    ['2026학년도 경상남도 고등학교 전·편입학 업무 시행 지침(2026.2, 경상남도교육청 중등교육과)', '노트북 소스 「04. 2026. 경상남도 고등학교 전·편입학 업무 시행 지침.pdf」'],
+    ['웅천고등학교 규정집(2026. 7. 20.) - 학교규칙 제22·23조, 전·편입학 및 재입학 업무 규정', '노트북 소스'],
+    ['학년별·학급별 학생수(2026학년도 공시)', '학교알리미 웅천고 공시'],
+    ['2026학년도 연간학사일정(정정), 수업일수 공시(1·2·3학년 190일)', '학교알리미 웅천고 공시(2026.4·5월)'],
+    ['2026학년도 학교교육과정 편성·운영·평가 계획(정정) - 당해연도 전 학년 편성표', '학교알리미 웅천고 공시(2026.4월)'],
+    ['2026·2027학년도 웅천고 신입생 입학전형 요강(7학급 210명, 정원 외 각 3% 이내)', '학교알리미 입학전형 요강'],
+    ['경남 고교 현황·모집정원', '경상남도교육청 고입포털 고교현황(앱을 열 때 자동 갱신, 「모집정원 새로고침」으로 즉시 갱신)'],
+    ['평준화지역 학군(1학군 성산·의창, 2학군 마산합포·회원, 3 진주, 4 김해, 5 거제)', '고입포털 평준화지역 입학전형 / 지침 Ⅲ-5-가'],
+    ['진해구 고교·행정복지센터 위치(직선거리 계산용)', 'Google 지도 플러스코드(근사)']
+  ]
+};
+
+/* 학년별 정원·현원 (기본값: 2026 공시 1학년 212, 2학년 200, 3학년 213명. 정원 내/외 구분은 나이스로 확인 후 수정) */
+var QUOTA_DEFAULT = {
+  baseDate: '2026-04-01 공시 기준(추정 구분)',
+  g: {
+    1: { ent: 210, inside: 210, out: { general: 2, innov: 0, env: 0, returnee: 0, merit: 0, military: 0, gradeDecide: 0, unlimited: 0 } },
+    2: { ent: 210, inside: 200, out: { general: 0, innov: 0, env: 0, returnee: 0, merit: 0, military: 0, gradeDecide: 0, unlimited: 0 } },
+    3: { ent: 210, inside: 210, out: { general: 3, innov: 0, env: 0, returnee: 0, merit: 0, military: 0, gradeDecide: 0, unlimited: 0 } }
+  }
+};
+var OUT_CATS = [
+  { k: 'general', n: '일반 전입생(타 시·도 중학교 졸업자 포함)', pct: 5, in10: true },
+  { k: 'innov', n: '혁신도시 이전기관 직원 자녀', pct: 5, in10: true },
+  { k: 'env', n: '교육환경 전환 학생', pct: 3, in10: true },
+  { k: 'returnee', n: '귀국학생 등', pct: 3, in10: true },
+  { k: 'merit', n: '국가유공자 자녀', pct: 3, in10: true },
+  { k: 'military', n: '군인(군무원) 자녀', pct: 3, in10: true },
+  { k: 'gradeDecide', n: '학년결정 입학자', pct: 2, in10: true },
+  { k: 'unlimited', n: '제한 없음(유급·재입학, 학폭 가해, 교육활동 침해, 체육특기자)', pct: null, in10: false }
+];
+
+/* 2026학년도 학사일정: [주 시작 월요일, 수업일수] (1·2·3학년 동일) */
+var CAL_DEFAULT = {
+  year: 2026, start: '2026-03-01', end: '2027-02-28', total: 190,
+  sem1: '2026-03-03', sem2: '2026-08-11', nextSem2: '2027-08-17',
+  periods: [['2026-03-03', '2026-07-20'], ['2026-08-11', '2026-12-28'], ['2027-02-03', '2027-02-05']],
+  holidays: ['2026-05-01', '2026-05-04', '2026-05-05', '2026-05-25', '2026-06-03', '2026-08-17', '2026-09-24', '2026-09-25', '2026-10-05', '2026-10-09', '2026-11-19', '2026-11-20', '2026-12-25'],
+  weeks: [
+    ['2026-03-02', 4], ['2026-03-09', 5], ['2026-03-16', 5], ['2026-03-23', 5], ['2026-03-30', 5], ['2026-04-06', 5], ['2026-04-13', 5],
+    ['2026-04-20', 5], ['2026-04-27', 4], ['2026-05-04', 3], ['2026-05-11', 5], ['2026-05-18', 5], ['2026-05-25', 4], ['2026-06-01', 4],
+    ['2026-06-08', 5], ['2026-06-15', 5], ['2026-06-22', 5], ['2026-06-29', 5], ['2026-07-06', 5], ['2026-07-13', 5], ['2026-07-20', 1],
+    ['2026-08-10', 4], ['2026-08-17', 4], ['2026-08-24', 5], ['2026-08-31', 5], ['2026-09-07', 5], ['2026-09-14', 5], ['2026-09-21', 3],
+    ['2026-09-28', 5], ['2026-10-05', 3], ['2026-10-12', 5], ['2026-10-19', 5], ['2026-10-26', 5], ['2026-11-02', 5], ['2026-11-09', 5],
+    ['2026-11-16', 3], ['2026-11-23', 5], ['2026-11-30', 5], ['2026-12-07', 5], ['2026-12-14', 5], ['2026-12-21', 4], ['2026-12-28', 1],
+    ['2027-02-01', 3]
+  ],
+  note: '수업일은 학기 기간(1학기 3.3.~7.20., 2학기 8.11.~12.28., 2.3.~2.5.)의 평일에서 휴업일을 뺀 날입니다. 주별 수업일수와 연간 190일이 공시 학사일정과 일치합니다. 단 1학기 종료일(7.20.)은 공시 이미지가 잘려 1학기 합계 95일에 맞춘 추정입니다.'
+};
+
+/* 2026학년도 당해연도 전 학년 교육과정 편성표 - 학교 지정 과목 (운영 학점) */
+var CURR_FIXED = [
+  ['국어', '공통국어1', '공통', { '1-1': 4 }], ['국어', '공통국어2', '공통', { '1-2': 4 }], ['국어', '문학', '일반', { '2-1': 4 }], ['국어', '독서와 작문', '일반', { '2-2': 3 }],
+  ['수학', '공통수학1', '공통', { '1-1': 4 }], ['수학', '공통수학2', '공통', { '1-2': 4 }], ['수학', '대수', '일반', { '2-1': 3 }], ['수학', '확률과 통계', '일반', { '2-1': 3 }], ['수학', '미적분Ⅰ', '일반', { '2-2': 4 }],
+  ['영어', '공통영어1', '공통', { '1-1': 4 }], ['영어', '공통영어2', '공통', { '1-2': 4 }], ['영어', '영어 독해와 작문', '일반', { '2-1': 3 }], ['영어', '영어Ⅰ', '일반', { '2-2': 4 }],
+  ['사회', '한국사1', '공통', { '1-1': 3 }], ['사회', '한국사2', '공통', { '1-2': 3 }], ['사회', '통합사회1', '공통', { '1-1': 4 }], ['사회', '통합사회2', '공통', { '1-2': 4 }],
+  ['과학', '통합과학1', '공통', { '1-1': 4 }], ['과학', '통합과학2', '공통', { '1-2': 4 }], ['과학', '과학탐구실험1', '공통', { '1-1': 1 }], ['과학', '과학탐구실험2', '공통', { '1-2': 1 }],
+  ['체육', '체육1', '일반', { '1-1': 2 }], ['체육', '체육2', '일반', { '1-2': 2 }], ['체육', '스포츠 생활1', '융합', { '2-1': 2 }], ['체육', '스포츠 생활2', '융합', { '2-2': 2 }], ['체육', '스포츠 생활', '진로', { '3-1': 1, '3-2': 1 }],
+  ['예술', '음악↔미술', '일반', { '1-1': 3, '1-2': 3 }],
+  ['교양', '논술', '융합', { '2-2': 2 }], ['교양', '환경', '일반', { '3-1': 1, '3-2': 1 }]
+];
+var CURR_SEL = [
+  ['2-1', '선택군A', '4과목 × 3학점', '인공지능 수학, 미디어 영어, 현대사회와 윤리, 세계시민과 지리, 세계사, 정치, 윤리문제 탐구, 물리학, 화학, 생명과학, 지구과학'],
+  ['2-1·2-2', '선택군B', '1과목 × 학기별 3학점', '정보, 일본어, 중국어'],
+  ['2-2', '선택군C', '4과목 × 3학점', '주제 탐구 독서, 문학과 영상, 기하, 세계 문화와 영어, 사회와 문화, 도시의 미래 탐구, 동아시아 역사 기행, 인문학과 윤리, 법과 사회, 기후변화와 지속가능한 세계, 역학과 에너지, 물질과 에너지, 세포와 물질대사, 지구시스템과학, 융합과학탐구'],
+  ['3-1·3-2', '선택군D', '4과목 × 3학점', '언어와 매체, 화법과 작문, 심화 국어, 미적분, 확률과 통계, 경제 수학, 영어 독해와 작문, 영어 회화, 영어권 문화'],
+  ['3-1·3-2', '선택군E', '2과목 × 3학점', '한국지리, 동아시아사, 정치와 법, 윤리와 사상, 경제, 물리학Ⅱ, 화학Ⅱ, 생명과학Ⅱ, 지구과학Ⅱ'],
+  ['3-1·3-2', '선택군F', '1과목 × 2학점', '음악 연주, 미술 창작'],
+  ['3-1·3-2', '선택군G', '1과목 × 2학점', '심리학, 교육학, 보건, 실용 경제, 논술'],
+  ['3-1·3-2', '선택군H', '2과목 × 2학점', '현대문학 감상, 수학과제 탐구, 영미 문학 읽기, 사회문제 탐구, 과학과제 연구, 일본어Ⅱ, 스포츠 경기 체력, 음악 전공 실기, 미술 전공 실기'],
+  ['3-1', '공동교육과정', '소인수 2학점', '프로그래밍(학교연합 공동, 거점학교)']
+];
+var CURR_TOTAL = { '1-1': [29, 0, 3], '1-2': [29, 0, 3], '2-1': [15, 15, 3], '2-2': [15, 15, 3], '3-1': [2, 26, 3], '3-2': [2, 26, 3] }; // [학교지정, 학생선택, 창체]
+
+/* 진해구 일반고 (모두 비평준화·학교장 전형) */
+var JINHAE = [
+  { n: '웅천고등학교', s: '웅천고', g: '공학', lat: 35.11269, lng: 128.74919, addr: '진해구 웅천중로 71', q: 210, me: true },
+  { n: '진해고등학교', s: '진해고', g: '남', lat: 35.16094, lng: 128.66481, addr: '진해구 여좌로 100', q: 300 },
+  { n: '진해여자고등학교', s: '진해여고', g: '여', lat: 35.15644, lng: 128.65806, addr: '진해구 여좌남로 23', q: 300 },
+  { n: '진해용원고등학교', s: '진해용원고', g: '공학', lat: 35.10119, lng: 128.81894, addr: '진해구 용재로77번길 8', q: 300 },
+  { n: '진해중앙고등학교', s: '진해중앙고', g: '남', lat: 35.16131, lng: 128.69006, addr: '진해구 병암북로 9', q: 210 },
+  { n: '진해세화여자고등학교', s: '진해세화여고', g: '여', lat: 35.16131, lng: 128.69394, addr: '진해구 병암북로4번길 41', q: 240 },
+  { n: '진해신항고등학교', s: '진해신항고', g: '공학', lat: 35.08806, lng: 128.81056, addr: '진해구 용원동 1337-2 일원(2027.3.1. 개교 예정)', q: 360, from: '2027-03-01', approx: true }
+];
+var DONGS = [
+  ['충무동', 35.15044, 128.66044, ''], ['중앙동', 35.1497, 128.6636, '근사'], ['태평동', 35.1462, 128.6662, '근사'], ['여좌동', 35.15856, 128.66031, ''],
+  ['태백동', 35.15394, 128.67744, ''], ['경화동', 35.15431, 128.68694, ''], ['병암동', 35.15494, 128.68956, ''], ['석동', 35.16019, 128.69831, ''],
+  ['이동', 35.14931, 128.69994, ''], ['자은동', 35.14706, 128.70544, ''], ['덕산동', 35.14331, 128.70381, ''], ['풍호동', 35.13756, 128.70731, ''],
+  ['웅천동', 35.11131, 128.74969, '성내·남문·북부·제덕·수도 등'], ['웅동1동', 35.12594, 128.78269, '소사·대장·마천·두동 등'], ['웅동2동', 35.10119, 128.81481, '용원·안골·청안·가주 등']
+];
+var PRINCIPAL_AREA = { '창원대산고등학교': 1, '창원북면고등학교': 1, '마산삼진고등학교': 2, '진서고등학교': 3, '진주외국어고등학교': 3, '진영고등학교': 4, '장유고등학교': 4, '김해대청고등학교': 4, '김해삼문고등학교': 4, '김해율하고등학교': 4, '김해수남고등학교': 4 };
+var GNE = [{"n":"간디고등학교","r":"산청","t":"특성화고","rec":"전국","g":"공학","q":30,"c":2,"tel":"055-973-1049","si":{"cls":[2,2,2],"cnt":[31,31,30],"sp":0}},{"n":"거제고등학교","r":"거제","t":"일반고(평준화 5학군)","rec":"경남","g":"공학","q":270,"c":9,"tel":"055-681-2647","si":{"cls":[9,9,9],"cnt":[272,254,260],"sp":0}},{"n":"거제공업고등학교","r":"거제","t":"특수목적고","rec":"전국","g":"공학","q":128,"c":8,"tel":"055-630-9027","si":{"cls":[8,8,7],"cnt":[131,109,104],"sp":0}},{"n":"거제상문고등학교","r":"거제","t":"일반고(평준화 5학군)","rec":"경남","g":"공학","q":390,"c":13,"tel":"055-634-2682","si":{"cls":[13,12,13],"cnt":[395,359,372],"sp":7}},{"n":"거제여자상업고등학교","r":"거제","t":"특성화고","rec":"경남","g":"공학","q":80,"c":4,"tel":"055-633-0982","si":{"cls":[4,4,4],"cnt":[39,31,32],"sp":0}},{"n":"거제옥포고등학교","r":"거제","t":"일반고(평준화 5학군)","rec":"경남","g":"공학","q":360,"c":12,"tel":"055-638-5982","si":{"cls":[13,12,12],"cnt":[390,332,332],"sp":28}},{"n":"거제제일고등학교","r":"거제","t":"일반고(평준화 5학군)","rec":"경남","g":"공학","q":270,"c":9,"tel":"055-633-3101","si":{"cls":[10,9,9],"cnt":[298,259,259],"sp":13}},{"n":"거제중앙고등학교","r":"거제","t":"일반고(평준화 5학군)","rec":"경남","g":"공학","q":390,"c":13,"tel":"055-632-8661","si":{"cls":[13,13,13],"cnt":[393,372,375],"sp":21}},{"n":"거창고등학교","r":"거창","t":"일반고(비평준화)","rec":"전국","g":"공학","q":88,"c":4,"tel":"055-944-3755","si":{"cls":[4,4,4],"cnt":[92,96,83],"sp":0}},{"n":"거창대성고등학교","r":"거창","t":"일반고(비평준화)","rec":"전국","g":"남","q":154,"c":7,"tel":"055-943-6817","si":{"cls":[7,7,7],"cnt":[157,164,159],"sp":0}},{"n":"거창승강기고등학교","r":"거창","t":"특성화고","rec":"경남","g":"공학","q":40,"c":2,"tel":"055-943-4523","si":{"cls":[2,2,2],"cnt":[34,21,26],"sp":0}},{"n":"거창여자고등학교","r":"거창","t":"일반고(비평준화)","rec":"전국","g":"여","q":88,"c":4,"tel":"055-942-3911","si":{"cls":[3,4,5],"cnt":[56,81,102],"sp":0}},{"n":"거창연극고등학교","r":"거창","t":"각종학교","rec":"전국","g":"공학","q":30,"c":2,"tel":"055-945-5010"},{"n":"거창중앙고등학교","r":"거창","t":"일반고(비평준화)","rec":"경남","g":"공학","q":154,"c":7,"tel":"055-942-3922","si":{"cls":[7,7,7],"cnt":[148,154,152],"sp":0}},{"n":"경남간호고등학교","r":"산청","t":"특성화고","rec":"경남","g":"공학","q":60,"c":3,"tel":"055-973-7831","si":{"cls":[3,3,3],"cnt":[60,36,28],"sp":0}},{"n":"경남고성음악고등학교","r":"고성","t":"각종학교","rec":"전국","g":"공학","q":30,"c":2,"tel":"055-672-4455"},{"n":"경남과학고등학교","r":"진주","t":"특수목적고","rec":"경남","g":"공학","q":100,"c":5,"tel":"055-759-4002","si":{"cls":[5,5,4],"cnt":[101,104,59],"sp":0}},{"n":"경남관광고등학교","r":"창원","t":"특성화고","rec":"경남","g":"공학","q":200,"c":10,"tel":"055-277-6871","si":{"cls":[10,10,10],"cnt":[202,192,178],"sp":14}},{"n":"경남로봇고등학교","r":"함안","t":"특성화고","rec":"경남","g":"공학","q":40,"c":2,"tel":"055-582-8503","si":{"cls":[2,2,2],"cnt":[38,39,37],"sp":0}},{"n":"경남산업고등학교","r":"거제","t":"특성화고","rec":"경남","g":"공학","q":180,"c":9,"tel":"055-636-1802","si":{"cls":[9,7,9],"cnt":[141,118,122],"sp":13}},{"n":"경남예술고등학교","r":"진주","t":"특수목적고","rec":"전국","g":"공학","q":109,"c":4,"tel":"055-759-3713","si":{"cls":[4,4,4],"cnt":[98,89,85],"sp":0}},{"n":"경남외국어고등학교","r":"양산","t":"특수목적고","rec":"경남","g":"공학","q":200,"c":8,"tel":"055-383-6601","si":{"cls":[8,8,8],"cnt":[204,201,186],"sp":0}},{"n":"경남자동차고등학교","r":"진주","t":"특성화고","rec":"경남, 전국(군특성화)","g":"공학","q":140,"c":7,"tel":"055-758-6714","si":{"cls":[7,7,7],"cnt":[138,101,88],"sp":0}},{"n":"경남자영고등학교","r":"사천","t":"특성화고","rec":"전국","g":"공학","q":100,"c":5,"tel":"055-855-0223","si":{"cls":[5,5,5],"cnt":[100,98,101],"sp":20}},{"n":"경남전자고등학교","r":"창원","t":"고등기술학교","rec":"경남","g":"공학","q":80,"c":4,"tel":"055-246-7181"},{"n":"경남정보고등학교","r":"진주","t":"특성화고","rec":"전국","g":"공학","q":100,"c":5,"tel":"055-761-8061","si":{"cls":[5,4,4],"cnt":[82,34,23],"sp":0}},{"n":"경남체육고등학교","r":"진주","t":"특수목적고","rec":"전국","g":"공학","q":90,"c":3,"tel":"055-759-4037","si":{"cls":[3,3,3],"cnt":[93,66,78],"sp":0}},{"n":"경남항공고등학교","r":"고성","t":"특성화고","rec":"전국","g":"공학","q":140,"c":7,"tel":"055-673-4563","si":{"cls":[7,7,8],"cnt":[140,119,108],"sp":0}},{"n":"경남해양과학고등학교","r":"남해","t":"특성화고","rec":"전국","g":"공학","q":36,"c":2,"tel":"055-867-0005","si":{"cls":[2,2,2],"cnt":[36,33,34],"sp":0}},{"n":"경상고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"남","q":168,"c":7,"tel":"055-255-5501","si":{"cls":[7,7,7],"cnt":[167,154,156],"sp":10}},{"n":"경상국립대학교사범대학부설고등학교","r":"진주","t":"일반고(평준화 3학군)","rec":"경남","g":"공학","q":156,"c":6,"tel":"055-772-4961","si":{"cls":[6,6,6],"cnt":[155,146,150],"sp":7}},{"n":"경진고등학교","r":"진주","t":"특성화고","rec":"경남","g":"공학","q":140,"c":7,"tel":"055-746-1522","si":{"cls":[7,7,7],"cnt":[141,99,105],"sp":0}},{"n":"경해여자고등학교","r":"진주","t":"일반고(평준화 3학군)","rec":"경남","g":"여","q":234,"c":9,"tel":"055-746-4184","si":{"cls":[9,9,10],"cnt":[230,206,226],"sp":0}},{"n":"고성고등학교","r":"고성","t":"일반고(비평준화)","rec":"경남","g":"공학","q":144,"c":6,"tel":"055-673-7892","si":{"cls":[6,6,6],"cnt":[138,118,100],"sp":0}},{"n":"고성중앙고등학교","r":"고성","t":"일반고(비평준화)","rec":"전국","g":"공학","q":144,"c":6,"tel":"055-674-7311","si":{"cls":[6,6,6],"cnt":[146,109,129],"sp":18}},{"n":"곤양고등학교","r":"사천","t":"일반고(비평준화)","rec":"경남","g":"공학","q":24,"c":1,"tel":"055-853-0122","si":{"cls":[1,1,1],"cnt":[17,6,13],"sp":0}},{"n":"공군항공과학고등학교","r":"진주","t":"특수목적고","rec":"전국","g":"공학","q":170,"c":null,"tel":"055-750-2121"},{"n":"구산고등학교","r":"김해","t":"일반고(평준화 4학군)","rec":"경남","g":"공학","q":208,"c":8,"tel":"055-310-7650","si":{"cls":[8,8,8],"cnt":[208,187,194],"sp":0}},{"n":"군북고등학교","r":"함안","t":"일반고(비평준화)","rec":"경남","g":"공학","q":48,"c":2,"tel":"055-585-5065","si":{"cls":[2,2,2],"cnt":[39,49,48],"sp":3}},{"n":"금남고등학교","r":"하동","t":"일반고(비평준화)","rec":"경남","g":"공학","q":44,"c":2,"tel":"055-882-1103","si":{"cls":[2,2,2],"cnt":[31,28,36],"sp":3}},{"n":"김해가야고등학교","r":"김해","t":"일반고(평준화 4학군)","rec":"경남","g":"공학","q":208,"c":8,"tel":"055-330-1333","si":{"cls":[9,8,8],"cnt":[237,193,202],"sp":9}},{"n":"김해건설공업고등학교","r":"김해","t":"특성화고","rec":"전국","g":"공학","q":220,"c":11,"tel":"055-340-7400","si":{"cls":[11,11,11],"cnt":[225,208,180],"sp":0}},{"n":"김해경원고등학교","r":"김해","t":"일반고(평준화 4학군)","rec":"경남","g":"공학","q":234,"c":9,"tel":"055-310-3200","si":{"cls":[9,9,9],"cnt":[235,219,226],"sp":13}},{"n":"김해고등학교","r":"김해","t":"일반고(평준화 4학군)","rec":"경남","g":"남","q":208,"c":8,"tel":"055-335-3306","si":{"cls":[8,8,8],"cnt":[196,193,199],"sp":7}},{"n":"김해금곡고등학교","r":"김해","t":"각종학교","rec":"경남, 부산, 울산","g":"공학","q":15,"c":1,"tel":"055-901-1000"},{"n":"김해대청고등학교","r":"김해","t":"일반고(평준화 내 학교장전형)","rec":"경남","g":"공학","q":377,"c":13,"tel":"055-310-5123","si":{"cls":[13,13,13],"cnt":[378,370,371],"sp":17}},{"n":"김해분성고등학교","r":"김해","t":"일반고(평준화 4학군)","rec":"경남","g":"남","q":208,"c":8,"tel":"055-331-2150","si":{"cls":[8,8,8],"cnt":[209,189,200],"sp":11}},{"n":"김해분성여자고등학교","r":"김해","t":"일반고(평준화 4학군)","rec":"경남","g":"여","q":184,"c":8,"tel":"055-340-8600","si":{"cls":[8,8,8],"cnt":[182,176,181],"sp":7}},{"n":"김해삼문고등학교","r":"김해","t":"일반고(평준화 내 학교장전형)","rec":"경남","g":"공학","q":348,"c":12,"tel":"055-312-0161","si":{"cls":[13,11,12],"cnt":[376,323,359],"sp":0}},{"n":"김해삼방고등학교","r":"김해","t":"일반고(평준화 4학군)","rec":"경남","g":"공학","q":208,"c":8,"tel":"055-312-8322","si":{"cls":[8,8,8],"cnt":[209,184,201],"sp":4}},{"n":"김해생명과학고등학교","r":"김해","t":"특성화고","rec":"경남","g":"공학","q":160,"c":8,"tel":"055-720-0001","si":{"cls":[8,8,8],"cnt":[169,163,153],"sp":24}},{"n":"김해수남고등학교","r":"김해","t":"일반고(평준화 내 학교장전형)","rec":"경남","g":"공학","q":348,"c":12,"tel":"055-724-9350","si":{"cls":[13,12,12],"cnt":[378,347,344],"sp":7}},{"n":"김해여자고등학교","r":"김해","t":"일반고(평준화 4학군)","rec":"경남","g":"여","q":208,"c":8,"tel":"055-310-3500","si":{"cls":[8,8,8],"cnt":[192,191,178],"sp":4}},{"n":"김해영운고등학교","r":"김해","t":"일반고(평준화 4학군)","rec":"경남","g":"공학","q":208,"c":8,"tel":"055-310-7300","si":{"cls":[8,8,8],"cnt":[184,182,199],"sp":7}},{"n":"김해외국어고등학교","r":"김해","t":"특수목적고","rec":"경남","g":"공학","q":125,"c":5,"tel":"055-312-1280","si":{"cls":[5,5,5],"cnt":[132,125,119],"sp":0}},{"n":"김해율하고등학교","r":"김해","t":"일반고(평준화 내 학교장전형)","rec":"경남","g":"공학","q":319,"c":11,"tel":"055-323-1909","si":{"cls":[13,11,11],"cnt":[381,324,351],"sp":0}},{"n":"김해임호고등학교","r":"김해","t":"일반고(평준화 4학군)","rec":"경남","g":"남","q":156,"c":6,"tel":"055-310-6320","si":{"cls":[6,6,6],"cnt":[136,145,143],"sp":0}},{"n":"김해제일고등학교","r":"김해","t":"일반고(평준화 4학군)","rec":"경남","g":"공학","q":208,"c":8,"tel":"055-329-6011","si":{"cls":[8,8,8],"cnt":[200,193,194],"sp":0}},{"n":"김해중앙여자고등학교","r":"김해","t":"일반고(평준화 4학군)","rec":"경남","g":"여","q":115,"c":5,"tel":"055-324-2724","si":{"cls":[4,5,5],"cnt":[86,113,109],"sp":0}},{"n":"김해한일여자고등학교","r":"김해","t":"특성화고","rec":"경남","g":"공학","q":160,"c":8,"tel":"1600-6992","si":{"cls":[8,8,8],"cnt":[160,145,145],"sp":0}},{"n":"남지고등학교","r":"창녕","t":"일반고(비평준화)","rec":"경남","g":"공학","q":115,"c":5,"tel":"055-526-2010","si":{"cls":[5,5,5],"cnt":[114,117,122],"sp":0}},{"n":"남해고등학교","r":"남해","t":"일반고(비평준화)","rec":"경남","g":"공학","q":110,"c":5,"tel":"055-862-4522","si":{"cls":[5,4,5],"cnt":[91,79,105],"sp":3}},{"n":"남해보물섬고등학교","r":"남해","t":"각종학교","rec":"경남, 부산, 울산","g":"공학","q":15,"c":1,"tel":"055-867-8732"},{"n":"남해정보산업고등학교","r":"남해","t":"특성화고","rec":"경남","g":"공학","q":40,"c":2,"tel":"055-862-3124","si":{"cls":[2,2,2],"cnt":[22,9,15],"sp":12}},{"n":"남해제일고등학교","r":"남해","t":"일반고(비평준화)","rec":"전국","g":"공학","q":132,"c":6,"tel":"055-862-0168","si":{"cls":[6,6,6],"cnt":[122,112,114],"sp":3}},{"n":"남해해성고등학교","r":"남해","t":"일반고(비평준화)","rec":"전국","g":"공학","q":88,"c":4,"tel":"055-862-7725","si":{"cls":[4,4,4],"cnt":[89,85,85],"sp":0}},{"n":"단성고등학교","r":"산청","t":"일반고(비평준화)","rec":"경남","g":"공학","q":44,"c":2,"tel":"055-973-6381","si":{"cls":[2,2,1],"cnt":[38,29,16],"sp":4}},{"n":"대곡고등학교","r":"진주","t":"일반고(평준화 내 학교장전형)","rec":"경남","g":"공학","q":null,"c":null,"tel":"055-746-6385","si":{"cls":[0,1,1],"cnt":[0,1,6],"sp":2}},{"n":"대성일고등학교","r":"거창","t":"일반고(비평준화)","rec":"경남","g":"공학","q":110,"c":5,"tel":"055-943-6823","si":{"cls":[5,5,5],"cnt":[108,114,99],"sp":9}},{"n":"대아고등학교","r":"진주","t":"일반고(평준화 3학군)","rec":"경남","g":"남","q":234,"c":9,"tel":"055-746-0054","si":{"cls":[9,9,10],"cnt":[236,216,247],"sp":0}},{"n":"덕산고등학교","r":"산청","t":"일반고(비평준화)","rec":"경남","g":"공학","q":22,"c":1,"tel":"055-973-4814","si":{"cls":[1,1,1],"cnt":[18,15,14],"sp":4}},{"n":"동원고등학교","r":"통영","t":"일반고(비평준화)","rec":"경남","g":"공학","q":300,"c":10,"tel":"055-645-3327","si":{"cls":[10,10,10],"cnt":[303,278,270],"sp":0}},{"n":"마산가포고등학교","r":"창원","t":"일반고(평준화 2학군)","rec":"경남","g":"공학","q":156,"c":6,"tel":"055-240-3602","si":{"cls":[6,6,6],"cnt":[143,141,146],"sp":0}},{"n":"마산고등학교","r":"창원","t":"일반고(평준화 2학군)","rec":"경남","g":"남","q":182,"c":7,"tel":"055-240-3500","si":{"cls":[7,7,7],"cnt":[173,171,169],"sp":8}},{"n":"마산공업고등학교","r":"창원","t":"특성화고","rec":"경남","g":"남","q":200,"c":10,"tel":"055-980-5104","si":{"cls":[10,10,10],"cnt":[204,186,139],"sp":0}},{"n":"마산구암고등학교","r":"창원","t":"일반고(평준화 2학군)","rec":"경남","g":"공학","q":182,"c":7,"tel":"055-297-8222","si":{"cls":[7,7,7],"cnt":[163,152,165],"sp":13}},{"n":"마산내서여자고등학교","r":"창원","t":"일반고(평준화 2학군)","rec":"경남","g":"여","q":234,"c":9,"tel":"055-231-7300","si":{"cls":[9,9,9],"cnt":[213,212,217],"sp":5}},{"n":"마산무학여자고등학교","r":"창원","t":"일반고(평준화 2학군)","rec":"경남","g":"여","q":208,"c":8,"tel":"055-241-3011","si":{"cls":[8,8,8],"cnt":[186,190,192],"sp":0}},{"n":"마산삼진고등학교","r":"창원","t":"일반고(평준화 내 학교장전형)","rec":"경남","g":"공학","q":182,"c":7,"tel":"055-271-2172","si":{"cls":[7,7,7],"cnt":[167,161,163],"sp":5}},{"n":"마산여자고등학교","r":"창원","t":"일반고(평준화 2학군)","rec":"경남","g":"여","q":182,"c":7,"tel":"055-249-3300","si":{"cls":[7,7,7],"cnt":[165,163,164],"sp":10}},{"n":"마산용마고등학교","r":"창원","t":"일반고(평준화 2학군)","rec":"경남","g":"남","q":182,"c":7,"tel":"055-245-8071","si":{"cls":[7,7,7],"cnt":[176,168,169],"sp":10}},{"n":"마산제일고등학교","r":"창원","t":"일반고(평준화 2학군)","rec":"경남","g":"남","q":234,"c":9,"tel":"055-232-3210","si":{"cls":[9,9,9],"cnt":[214,216,217],"sp":10}},{"n":"마산제일여자고등학교","r":"창원","t":"일반고(평준화 2학군)","rec":"경남","g":"여","q":208,"c":8,"tel":"055-242-3421","si":{"cls":[8,8,8],"cnt":[183,179,188],"sp":0}},{"n":"마산중앙고등학교","r":"창원","t":"일반고(평준화 2학군)","rec":"경남","g":"남","q":156,"c":6,"tel":"055-246-9350","si":{"cls":[6,5,6],"cnt":[133,118,144],"sp":0}},{"n":"명덕고등학교","r":"함안","t":"일반고(비평준화)","rec":"경남","g":"공학","q":115,"c":5,"tel":"055-583-2514","si":{"cls":[5,5,5],"cnt":[114,116,115],"sp":5}},{"n":"명신고등학교","r":"진주","t":"일반고(평준화 3학군)","rec":"경남","g":"남","q":184,"c":8,"tel":"055-753-0011","si":{"cls":[8,8,9],"cnt":[183,192,225],"sp":2}},{"n":"물금고등학교","r":"양산","t":"일반고(비평준화)","rec":"경남","g":"공학","q":330,"c":11,"tel":"055-382-1701","si":{"cls":[11,11,11],"cnt":[314,323,332],"sp":15}},{"n":"밀성고등학교","r":"밀양","t":"일반고(비평준화)","rec":"경남","g":"공학","q":125,"c":5,"tel":"055-354-3084","si":{"cls":[5,5,6],"cnt":[123,120,138],"sp":6}},{"n":"밀성제일고등학교","r":"밀양","t":"특성화고","rec":"경남","g":"여","q":100,"c":5,"tel":"055-353-5204","si":{"cls":[5,5,5],"cnt":[73,64,62],"sp":3}},{"n":"밀양고등학교","r":"밀양","t":"일반고(비평준화)","rec":"경남","g":"남","q":150,"c":6,"tel":"055-353-6741","si":{"cls":[6,6,7],"cnt":[145,137,155],"sp":11}},{"n":"밀양동명고등학교","r":"밀양","t":"일반고(비평준화)","rec":"경남","g":"공학","q":75,"c":3,"tel":"055-391-5388","si":{"cls":[3,3,3],"cnt":[74,71,70],"sp":5}},{"n":"밀양여자고등학교","r":"밀양","t":"일반고(비평준화)","rec":"경남","g":"여","q":75,"c":3,"tel":"055-354-2106","si":{"cls":[3,3,4],"cnt":[74,69,80],"sp":5}},{"n":"밀양영화고등학교","r":"밀양","t":"각종학교","rec":"전국","g":"공학","q":30,"c":2,"tel":"055-356-7306"},{"n":"범어고등학교","r":"양산","t":"일반고(비평준화)","rec":"경남","g":"공학","q":300,"c":10,"tel":"055-364-6743","si":{"cls":[10,10,10],"cnt":[291,296,311],"sp":9}},{"n":"보광고등학교","r":"양산","t":"일반고(비평준화)","rec":"경남","g":"공학","q":125,"c":5,"tel":"055-382-6651","si":{"cls":[4,4,5],"cnt":[95,91,110],"sp":0}},{"n":"사송고등학교","r":"양산","t":"일반고(비평준화)","rec":"경남","g":"공학","q":330,"c":11,"tel":"055-382-1061","si":{"cls":[10,0,0],"cnt":[265,0,0],"sp":3}},{"n":"사천고등학교","r":"사천","t":"일반고(비평준화)","rec":"경남","g":"공학","q":196,"c":7,"tel":"055-855-1204","si":{"cls":[7,7,7],"cnt":[197,189,187],"sp":0}},{"n":"사천여자고등학교","r":"사천","t":"특성화고","rec":"경남","g":"여","q":60,"c":3,"tel":"055-852-2612","si":{"cls":[3,3,4],"cnt":[58,47,61],"sp":4}},{"n":"산청고등학교","r":"산청","t":"일반고(비평준화)","rec":"경남","g":"공학","q":110,"c":5,"tel":"055-973-0782","si":{"cls":[5,5,5],"cnt":[111,110,104],"sp":8}},{"n":"삼가고등학교","r":"합천","t":"특성화고","rec":"경남","g":"공학","q":42,"c":2,"tel":"055-932-4695","si":{"cls":[2,2,2],"cnt":[27,25,32],"sp":3}},{"n":"삼랑진고등학교","r":"밀양","t":"일반고(비평준화)","rec":"경남","g":"공학","q":75,"c":3,"tel":"055-353-9703","si":{"cls":[3,3,3],"cnt":[78,70,64],"sp":3}},{"n":"삼천포고등학교","r":"사천","t":"일반고(비평준화)","rec":"경남","g":"남","q":144,"c":6,"tel":"055-835-4680","si":{"cls":[6,6,6],"cnt":[144,136,131],"sp":6}},{"n":"삼천포공업고등학교","r":"사천","t":"특수목적고","rec":"전국","g":"공학","q":96,"c":6,"tel":"055-834-8601","si":{"cls":[6,6,6],"cnt":[96,88,105],"sp":0}},{"n":"삼천포여자고등학교","r":"사천","t":"일반고(비평준화)","rec":"경남","g":"여","q":144,"c":6,"tel":"055-833-1262","si":{"cls":[6,6,6],"cnt":[139,122,121],"sp":0}},{"n":"삼천포중앙고등학교","r":"사천","t":"일반고(비평준화)","rec":"경남","g":"공학","q":120,"c":5,"tel":"055-833-1392","si":{"cls":[5,5,5],"cnt":[119,116,101],"sp":8}},{"n":"삼현여자고등학교","r":"진주","t":"일반고(평준화 3학군)","rec":"경남","g":"여","q":234,"c":9,"tel":"055-752-5410","si":{"cls":[9,9,10],"cnt":[232,215,245],"sp":0}},{"n":"서상고등학교","r":"함양","t":"일반고(비평준화)","rec":"경남","g":"공학","q":22,"c":1,"tel":"055-963-0305","si":{"cls":[1,1,1],"cnt":[10,1,2],"sp":0}},{"n":"서창고등학교","r":"양산","t":"일반고(비평준화)","rec":"경남","g":"공학","q":300,"c":10,"tel":"055-785-2501","si":{"cls":[10,10,10],"cnt":[297,285,304],"sp":15}},{"n":"선명여자고등학교","r":"진주","t":"특성화고","rec":"경남","g":"여","q":180,"c":9,"tel":"055-747-5490","si":{"cls":[8,8,10],"cnt":[118,107,144],"sp":0}},{"n":"성지여자고등학교","r":"창원","t":"일반고(평준화 2학군)","rec":"경남","g":"여","q":182,"c":7,"tel":"055-240-8880","si":{"cls":[7,6,7],"cnt":[166,121,166],"sp":0}},{"n":"세종고등학교","r":"밀양","t":"일반고(비평준화)","rec":"전국","g":"공학","q":125,"c":5,"tel":"055-356-7983","si":{"cls":[5,5,6],"cnt":[129,119,144],"sp":2}},{"n":"신등고등학교","r":"산청","t":"일반고(비평준화)","rec":"경남","g":"공학","q":null,"c":null,"tel":"055-973-7724","si":{"cls":[0,0,1],"cnt":[0,0,6],"sp":0}},{"n":"신반정보고등학교","r":"의령","t":"특성화고","rec":"경남","g":"공학","q":20,"c":1,"tel":"055-574-6415","si":{"cls":[1,1,1],"cnt":[20,13,5],"sp":2}},{"n":"아림고등학교","r":"거창","t":"일반고(비평준화)","rec":"경남","g":"공학","q":88,"c":4,"tel":"055-942-3712","si":{"cls":[4,4,4],"cnt":[72,55,68],"sp":14}},{"n":"안의고등학교","r":"함양","t":"일반고(비평준화)","rec":"경남","g":"공학","q":44,"c":2,"tel":"055-962-0559","si":{"cls":[2,2,2],"cnt":[41,36,31],"sp":3}},{"n":"야로고등학교","r":"합천","t":"일반고(비평준화)","rec":"경남","g":"공학","q":44,"c":2,"tel":"055-932-6785","si":{"cls":[2,1,2],"cnt":[22,18,27],"sp":3}},{"n":"양산고등학교","r":"양산","t":"일반고(비평준화)","rec":"경남","g":"남","q":300,"c":10,"tel":"055-384-9503","si":{"cls":[10,10,11],"cnt":[273,269,325],"sp":4}},{"n":"양산남부고등학교","r":"양산","t":"일반고(비평준화)","rec":"경남","g":"공학","q":330,"c":11,"tel":"055-382-1061","si":{"cls":[11,11,10],"cnt":[312,325,309],"sp":11}},{"n":"양산여자고등학교","r":"양산","t":"일반고(비평준화)","rec":"경남","g":"여","q":300,"c":10,"tel":"055-384-2416","si":{"cls":[10,10,10],"cnt":[293,269,287],"sp":0}},{"n":"양산인공지능고등학교","r":"양산","t":"특성화고","rec":"경남","g":"공학","q":126,"c":7,"tel":"055-781-2971","si":{"cls":[7,7,0],"cnt":[127,124,0],"sp":5}},{"n":"양산제일고등학교","r":"양산","t":"일반고(비평준화)","rec":"경남","g":"공학","q":240,"c":8,"tel":"055-387-7897","si":{"cls":[8,8,8],"cnt":[222,224,226],"sp":0}},{"n":"연초고등학교","r":"거제","t":"일반고(평준화 5학군)","rec":"경남","g":"공학","q":360,"c":12,"tel":"055-636-9804","si":{"cls":[13,13,13],"cnt":[379,367,359],"sp":7}},{"n":"영산고등학교","r":"창녕","t":"일반고(비평준화)","rec":"경남","g":"공학","q":69,"c":3,"tel":"055-536-0074","si":{"cls":[3,3,3],"cnt":[70,59,68],"sp":3}},{"n":"옥종고등학교","r":"하동","t":"일반고(비평준화)","rec":"경남","g":"공학","q":22,"c":1,"tel":"055-882-8103","si":{"cls":[1,1,1],"cnt":[20,18,16],"sp":2}},{"n":"용남고등학교","r":"사천","t":"일반고(비평준화)","rec":"경남","g":"공학","q":168,"c":6,"tel":"055-854-3156","si":{"cls":[6,6,6],"cnt":[172,164,155],"sp":4}},{"n":"웅상고등학교","r":"양산","t":"일반고(비평준화)","rec":"경남","g":"공학","q":270,"c":9,"tel":"055-367-8541","si":{"cls":[10,9,8],"cnt":[295,251,247],"sp":15}},{"n":"웅천고등학교","r":"창원","t":"일반고(비평준화)","rec":"경남","g":"공학","q":210,"c":7,"tel":"055-541-3909","si":{"cls":[7,7,7],"cnt":[212,200,213],"sp":6}},{"n":"의령고등학교","r":"의령","t":"일반고(비평준화)","rec":"경남","g":"남","q":66,"c":3,"tel":"055-573-2383","si":{"cls":[3,3,3],"cnt":[49,57,54],"sp":2}},{"n":"의령여자고등학교","r":"의령","t":"일반고(비평준화)","rec":"경남","g":"여","q":66,"c":3,"tel":"055-573-2483","si":{"cls":[3,3,3],"cnt":[69,56,64],"sp":4}},{"n":"장유고등학교","r":"김해","t":"일반고(평준화 내 학교장전형)","rec":"경남","g":"공학","q":377,"c":13,"tel":"055-310-7920","si":{"cls":[12,13,13],"cnt":[353,362,374],"sp":14}},{"n":"장평고등학교","r":"거제","t":"일반고(평준화 5학군)","rec":"경남","g":"공학","q":330,"c":11,"tel":"-"},{"n":"증산고등학교","r":"양산","t":"일반고(비평준화)","rec":"경남","g":"공학","q":360,"c":12,"tel":"055-911-8000","si":{"cls":[12,12,12],"cnt":[338,360,383],"sp":8}},{"n":"지리산고등학교","r":"산청","t":"특성화고","rec":"전국","g":"공학","q":15,"c":1,"tel":"055-973-9723","si":{"cls":[1,1,1],"cnt":[16,15,15],"sp":0}},{"n":"진교고등학교","r":"하동","t":"일반고(비평준화)","rec":"경남","g":"공학","q":44,"c":2,"tel":"055-882-3164","si":{"cls":[2,1,2],"cnt":[21,18,30],"sp":6}},{"n":"진서고등학교","r":"진주","t":"일반고(평준화 내 학교장전형)","rec":"경남","g":"공학","q":26,"c":1,"tel":"055-754-4767","si":{"cls":[1,1,1],"cnt":[3,4,9],"sp":0}},{"n":"진양고등학교","r":"진주","t":"일반고(평준화 3학군)","rec":"경남","g":"공학","q":230,"c":10,"tel":"055-761-4011","si":{"cls":[10,10,10],"cnt":[234,233,221],"sp":11}},{"n":"진영고등학교","r":"김해","t":"일반고(평준화 내 학교장전형)","rec":"경남","g":"공학","q":280,"c":10,"tel":"055-344-2700","si":{"cls":[10,10,10],"cnt":[283,284,286],"sp":10}},{"n":"진영제일고등학교","r":"김해","t":"특성화고","rec":"경남","g":"공학","q":100,"c":5,"tel":"055-343-5412","si":{"cls":[5,5,5],"cnt":[103,94,84],"sp":7}},{"n":"진주고등학교","r":"진주","t":"일반고(평준화 3학군)","rec":"경남","g":"남","q":182,"c":7,"tel":"055-741-2611","si":{"cls":[7,7,8],"cnt":[181,162,196],"sp":16}},{"n":"진주기계공업고등학교","r":"진주","t":"특성화고","rec":"경남","g":"공학","q":162,"c":9,"tel":"055-752-1803","si":{"cls":[9,9,9],"cnt":[183,173,174],"sp":0}},{"n":"진주동명고등학교","r":"진주","t":"일반고(평준화 3학군)","rec":"경남","g":"남","q":234,"c":9,"tel":"055-752-4392","si":{"cls":[9,9,10],"cnt":[235,213,244],"sp":0}},{"n":"진주여자고등학교","r":"진주","t":"일반고(평준화 3학군)","rec":"경남","g":"여","q":208,"c":8,"tel":"055-749-3410","si":{"cls":[8,8,9],"cnt":[209,192,217],"sp":11}},{"n":"진주외국어고등학교","r":"진주","t":"일반고(평준화 내 학교장전형)","rec":"경남","g":"공학","q":78,"c":3,"tel":"055-761-7564","si":{"cls":[3,3,3],"cnt":[45,55,54],"sp":2}},{"n":"진주제일여자고등학교","r":"진주","t":"일반고(평준화 3학군)","rec":"경남","g":"여","q":234,"c":9,"tel":"055-755-0772","si":{"cls":[9,9,10],"cnt":[238,214,232],"sp":9}},{"n":"진주중앙고등학교","r":"진주","t":"일반고(평준화 3학군)","rec":"경남","g":"공학","q":161,"c":7,"tel":"055-754-0378","si":{"cls":[7,7,8],"cnt":[179,160,195],"sp":12}},{"n":"진해고등학교","r":"창원","t":"일반고(비평준화)","rec":"경남","g":"남","q":300,"c":10,"tel":"055-546-2260","si":{"cls":[10,10,10],"cnt":[303,290,292],"sp":23}},{"n":"진해세화여자고등학교","r":"창원","t":"일반고(비평준화)","rec":"경남","g":"여","q":240,"c":8,"tel":"055-545-3113","si":{"cls":[8,8,8],"cnt":[217,220,246],"sp":0}},{"n":"진해신항고등학교","r":"창원","t":"일반고(비평준화)","rec":"경남","g":"공학","q":360,"c":12,"tel":"055-210-0577"},{"n":"진해여자고등학교","r":"창원","t":"일반고(비평준화)","rec":"경남","g":"여","q":300,"c":10,"tel":"055-541-6911","si":{"cls":[9,9,9],"cnt":[249,262,262],"sp":6}},{"n":"진해용원고등학교","r":"창원","t":"일반고(비평준화)","rec":"경남","g":"공학","q":300,"c":10,"tel":"055-541-1171","si":{"cls":[10,10,10],"cnt":[300,295,285],"sp":10}},{"n":"진해중앙고등학교","r":"창원","t":"일반고(비평준화)","rec":"경남","g":"남","q":210,"c":7,"tel":"055-542-3303","si":{"cls":[7,7,7],"cnt":[214,203,211],"sp":0}},{"n":"창녕고등학교","r":"창녕","t":"일반고(비평준화)","rec":"전국","g":"남","q":46,"c":2,"tel":"055-533-4175","si":{"cls":[2,2,2],"cnt":[47,43,43],"sp":0}},{"n":"창녕대성고등학교","r":"창녕","t":"일반고(비평준화)","rec":"전국","g":"공학","q":46,"c":2,"tel":"055-532-2215","si":{"cls":[2,2,2],"cnt":[40,40,30],"sp":0}},{"n":"창녕슈퍼텍고등학교","r":"창녕","t":"특성화고","rec":"경남","g":"공학","q":80,"c":4,"tel":"055-532-3253","si":{"cls":[4,4,4],"cnt":[77,61,61],"sp":8}},{"n":"창녕여자고등학교","r":"창녕","t":"일반고(비평준화)","rec":"전국","g":"여","q":89,"c":4,"tel":"055-532-1332","si":{"cls":[3,2,3],"cnt":[68,51,81],"sp":4}},{"n":"창녕옥야고등학교","r":"창녕","t":"일반고(비평준화)","rec":"전국","g":"공학","q":92,"c":4,"tel":"055-532-6048","si":{"cls":[4,4,4],"cnt":[96,97,89],"sp":0}},{"n":"창선고등학교","r":"남해","t":"일반고(비평준화)","rec":"경남","g":"공학","q":66,"c":3,"tel":"055-867-1726","si":{"cls":[3,3,3],"cnt":[58,60,50],"sp":4}},{"n":"창신고등학교","r":"창원","t":"일반고(평준화 2학군)","rec":"경남","g":"남","q":208,"c":8,"tel":"055-290-2800","si":{"cls":[8,8,8],"cnt":[192,184,182],"sp":0}},{"n":"창원경일고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"남","q":168,"c":7,"tel":"055-285-0450","si":{"cls":[7,7,7],"cnt":[154,141,151],"sp":0}},{"n":"창원경일여자고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"여","q":144,"c":6,"tel":"055-274-0040","si":{"cls":[6,5,5],"cnt":[134,112,91],"sp":0}},{"n":"창원고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"남","q":192,"c":8,"tel":"055-237-0126","si":{"cls":[8,8,8],"cnt":[194,190,190],"sp":0}},{"n":"창원공업고등학교","r":"창원","t":"특성화고","rec":"경남","g":"공학","q":180,"c":9,"tel":"055-288-3593","si":{"cls":[9,7,8],"cnt":[179,109,119],"sp":0}},{"n":"창원과학고등학교","r":"창원","t":"특수목적고","rec":"경남","g":"공학","q":80,"c":4,"tel":"055-711-2300","si":{"cls":[4,4,3],"cnt":[82,78,51],"sp":0}},{"n":"창원기계공업고등학교","r":"창원","t":"특성화고","rec":"경남","g":"공학","q":270,"c":15,"tel":"055-282-5081","si":{"cls":[15,15,15],"cnt":[309,287,301],"sp":0}},{"n":"창원남고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"공학","q":192,"c":8,"tel":"055-289-6952","si":{"cls":[8,7,8],"cnt":[193,160,169],"sp":0}},{"n":"창원남산고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"공학","q":168,"c":7,"tel":"055-268-0917","si":{"cls":[7,7,7],"cnt":[169,167,163],"sp":10}},{"n":"창원대산고등학교","r":"창원","t":"일반고(평준화 내 학교장전형)","rec":"경남","g":"공학","q":168,"c":7,"tel":"055-291-4331","si":{"cls":[7,7,7],"cnt":[167,157,151],"sp":0}},{"n":"창원대암고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"공학","q":168,"c":7,"tel":"055-213-0510","si":{"cls":[7,7,7],"cnt":[170,160,160],"sp":10}},{"n":"창원명곡고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"공학","q":168,"c":7,"tel":"055-270-7900","si":{"cls":[7,7,7],"cnt":[167,161,163],"sp":13}},{"n":"창원명지여자고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"여","q":168,"c":7,"tel":"055-270-2250","si":{"cls":[7,7,7],"cnt":[168,165,154],"sp":10}},{"n":"창원문성고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"공학","q":192,"c":8,"tel":"055-270-6520","si":{"cls":[7,7,8],"cnt":[161,146,156],"sp":0}},{"n":"창원봉림고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"공학","q":168,"c":7,"tel":"055-710-8222","si":{"cls":[7,7,7],"cnt":[153,166,158],"sp":3}},{"n":"창원북면고등학교","r":"창원","t":"일반고(평준화 내 학교장전형)","rec":"경남","g":"공학","q":280,"c":10,"tel":"055-602-1265","si":{"cls":[10,10,11],"cnt":[283,278,303],"sp":8}},{"n":"창원사파고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"공학","q":168,"c":7,"tel":"055-285-9624","si":{"cls":[7,7,7],"cnt":[168,169,160],"sp":5}},{"n":"창원성민여자고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"여","q":168,"c":7,"tel":"055-251-6707","si":{"cls":[7,7,7],"cnt":[168,157,153],"sp":0}},{"n":"창원신월고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"공학","q":168,"c":7,"tel":"055-262-1265","si":{"cls":[7,7,7],"cnt":[167,163,159],"sp":7}},{"n":"창원여자고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"여","q":168,"c":7,"tel":"055-260-1900","si":{"cls":[6,6,7],"cnt":[139,120,157],"sp":0}},{"n":"창원용호고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"공학","q":192,"c":8,"tel":"055-286-7004","si":{"cls":[8,8,8],"cnt":[197,189,178],"sp":10}},{"n":"창원중앙고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"남","q":192,"c":8,"tel":"055-239-3100","si":{"cls":[8,8,8],"cnt":[177,185,186],"sp":0}},{"n":"창원중앙여자고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"여","q":168,"c":7,"tel":"055-210-3114","si":{"cls":[6,5,7],"cnt":[129,109,154],"sp":0}},{"n":"창원토월고등학교","r":"창원","t":"일반고(평준화 1학군)","rec":"경남","g":"공학","q":168,"c":7,"tel":"055-210-0720","si":{"cls":[7,7,7],"cnt":[167,157,159],"sp":4}},{"n":"철성고등학교","r":"고성","t":"일반고(비평준화)","rec":"경남","g":"공학","q":96,"c":4,"tel":"055-674-7603","si":{"cls":[4,4,4],"cnt":[97,87,93],"sp":0}},{"n":"초계고등학교","r":"합천","t":"특성화고","rec":"경남","g":"공학","q":40,"c":2,"tel":"055-932-1004","si":{"cls":[2,2,2],"cnt":[36,13,27],"sp":0}},{"n":"충렬여자고등학교","r":"통영","t":"일반고(비평준화)","rec":"경남","g":"여","q":180,"c":6,"tel":"055-645-4050","si":{"cls":[6,6,7],"cnt":[181,163,173],"sp":0}},{"n":"충무고등학교","r":"통영","t":"일반고(비평준화)","rec":"경남","g":"공학","q":184,"c":8,"tel":"055-642-9101","si":{"cls":[8,8,8],"cnt":[168,167,178],"sp":13}},{"n":"칠원고등학교","r":"함안","t":"일반고(비평준화)","rec":"전국","g":"공학","q":120,"c":5,"tel":"055-587-1013","si":{"cls":[5,5,5],"cnt":[122,117,125],"sp":17}},{"n":"태봉고등학교","r":"창원","t":"특성화고","rec":"경남","g":"공학","q":45,"c":3,"tel":"055-271-1348","si":{"cls":[3,3,3],"cnt":[35,31,31],"sp":0}},{"n":"통영고등학교","r":"통영","t":"일반고(비평준화)","rec":"경남","g":"남","q":300,"c":10,"tel":"055-646-3301","si":{"cls":[11,11,10],"cnt":[330,310,281],"sp":16}},{"n":"통영여자고등학교","r":"통영","t":"일반고(비평준화)","rec":"경남","g":"여","q":270,"c":9,"tel":"055-640-3700","si":{"cls":[9,8,9],"cnt":[261,211,228],"sp":4}},{"n":"하동고등학교","r":"하동","t":"일반고(비평준화)","rec":"전국","g":"남","q":66,"c":3,"tel":"055-883-3843","si":{"cls":[3,2,4],"cnt":[61,39,69],"sp":6}},{"n":"하동여자고등학교","r":"하동","t":"일반고(비평준화)","rec":"경남","g":"여","q":66,"c":3,"tel":"055-883-4653","si":{"cls":[3,3,3],"cnt":[55,55,50],"sp":5}},{"n":"한국과학기술고등학교","r":"창녕","t":"특성화고","rec":"경남","g":"공학","q":80,"c":4,"tel":"055-533-1889","si":{"cls":[4,4,4],"cnt":[82,76,66],"sp":0}},{"n":"한국나노마이스터고등학교","r":"밀양","t":"특수목적고","rec":"전국","g":"공학","q":80,"c":5,"tel":"055-352-7537","si":{"cls":[5,5,5],"cnt":[78,69,77],"sp":0}},{"n":"한일여자고등학교","r":"창원","t":"특성화고","rec":"경남","g":"여","q":200,"c":10,"tel":"1600-6991","si":{"cls":[10,10,10],"cnt":[201,191,198],"sp":0}},{"n":"함안고등학교","r":"함안","t":"일반고(비평준화)","rec":"전국","g":"공학","q":144,"c":6,"tel":"055-582-2582","si":{"cls":[6,6,6],"cnt":[142,134,150],"sp":7}},{"n":"함양고등학교","r":"함양","t":"일반고(비평준화)","rec":"전국","g":"공학","q":110,"c":5,"tel":"055-963-3202","si":{"cls":[5,5,5],"cnt":[110,108,113],"sp":0}},{"n":"함양제일고등학교","r":"함양","t":"특성화고","rec":"경남","g":"공학","q":100,"c":5,"tel":"055-963-2489","si":{"cls":[6,6,6],"cnt":[85,86,97],"sp":17}},{"n":"합천고등학교","r":"합천","t":"일반고(비평준화)","rec":"전국","g":"남","q":66,"c":3,"tel":"055-934-2570","si":{"cls":[3,3,3],"cnt":[55,42,60],"sp":3}},{"n":"합천여자고등학교","r":"합천","t":"일반고(비평준화)","rec":"경남","g":"여","q":66,"c":3,"tel":"055-933-3366","si":{"cls":[2,3,3],"cnt":[38,66,62],"sp":2}},{"n":"합천평화고등학교","r":"합천","t":"특성화고","rec":"전국","g":"공학","q":30,"c":2,"tel":"055-933-2019","si":{"cls":[2,2,2],"cnt":[23,24,26],"sp":0}},{"n":"합포고등학교","r":"창원","t":"일반고(평준화 2학군)","rec":"경남","g":"공학","q":182,"c":7,"tel":"055-240-4100","si":{"cls":[7,7,7],"cnt":[166,165,164],"sp":10}},{"n":"해성고등학교","r":"거제","t":"일반고(평준화 5학군)","rec":"경남","g":"공학","q":300,"c":10,"tel":"055-680-1201","si":{"cls":[9,9,9],"cnt":[266,254,254],"sp":0}},{"n":"효암고등학교","r":"양산","t":"일반고(비평준화)","rec":"전국","g":"공학","q":300,"c":10,"tel":"055-366-0021","si":{"cls":[10,10,10],"cnt":[294,258,293],"sp":0}}];
+var GNE_META = { updated: '2026-11-18 12:40', from: '앱에 내장된 값', siYear: 2026 };
+var GNE_PROXY = 'https://script.google.com/macros/s/AKfycbwWqLya9ypn_Dnxe2rub8y7AZ8AiFkgxPr1dbeXh66WIZuY0X36LM3PUS85uRel41K8RQ/exec';
+
+/* ===== 규정 원문 (근거 조항) ===== */
+var RULES = {
+  J23: { t: '지침 Ⅱ-3. 전·편입학 및 재입학 허용 범위', p: '지침 3쪽', x: '일반 전·편입학 및 재입학 학생의 학교별 정원 외 총합 비율은 학년별(특성화고는 모집단위별) 입학 정원의 10%를 넘지 않도록 한다.\n- 유급생 및 재입학자: 제한 없음\n- 일반 전입생(타 시·도 중학교 졸업자 포함): 정원 외 5% 범위 내\n- 「혁신도시 조성 및 발전에 관한 특별법」에 의거 이전한 기관의 직원 자녀: 정원 외 5% 범위 내\n- 교육환경 전환 학생: 정원 외 3% 범위 내\n- 학교폭력 가해학생, 교육활동 침해학생: 제한 없음\n- 귀국학생 등: 정원 외 3% 범위 내\n- 국가유공자 자녀: 정원 외 3% 범위 내\n- 군인자녀: 정원 외 3% 범위 내\n- 고등학교 학년결정 입학자: 정원 외 2% 범위 내\n- 체육특기자: 제한 없음\n※ 단, 정원 외에는 결원이 없으나 정원 내 결원이 있는 경우 학교 내 전·편입학심의위원회에서 전입학 허가를 결정\n※ 특수교육대상자는 정원 외 총합 비율에 포함하지 않음' },
+  J24ga: { t: '지침 Ⅱ-4-가. 전·편입학 허용 시기', p: '지침 3쪽', x: '교육과정 이수에 지장이 없는 범위 안에서 동일 계열 고등학교 간의 전·편입학을 원칙으로 함.\n- 동일 계열 고등학교 간: 전입교의 3학년 2학기 시작 전까지\n- 타 계열 고등학교 간: 전입교의 2학년 1학기 시작 전(2월 말일)까지\n- 귀국학생 등의 재·편입학: 전 학년(특별한 사유가 없는 한 귀국 후 1개월 이내, 학업연속성)\n- 학년결정 입학자의 편입학: 2학년 1학기, 2학년 2학기, 3학년 1학기(신청은 학기 시작 전후 10일 이내, 결과 통보는 학기 시작 후 20일 이내)\n※ 단, 경남체육고 재학 체육특기자 포기 학생에 한하여 2학년 1학기 2차고사 전까지 타 계열 전입학 허용' },
+  J24da1: { t: '지침 Ⅱ-4-다-1). 시기 제한 예외와 계열 구분', p: '지침 4쪽', x: '학교폭력 가해 또는 교육활동 침해 학생이 동일 계열의 학교로 전입학 시에는 시기 제한 없음.\n- 동일 계열(1그룹): 특정분야 인재양성 특성화고, 산업수요맞춤형 특수목적고(거제공업고, 한국나노마이스터고, 삼천포공업고), 일반고 직업계열 학과(창녕여고 보건간호과, 삼가고 조리과)\n- 동일 계열(2그룹): 1그룹을 제외한 모든 학교' },
+  J24da2: { t: '지침 Ⅱ-4-다-2). 교육과정 이수에 지장이 없는 범위', p: '지침 4쪽', x: '가) 해당 학년 전·편·재입학 이전의 출석일수와 출석해야 할 일수를 합산하여 당해 학교 당해 학년 수업일수의 2/3 이상이어야 전·편입학 허가\n※ 3분의 2 미만이 될 경우 수료 또는 졸업 인정이 되지 않아 원칙적으로 당해 학년도 재입학·전입학·복학이 불가능함(「초·중등교육법 시행령」 제50조제2항)\n나) 이전의 교육과정 이수 학점(시간)과 이후 이수해야 할 학점(시간)을 합산하여 해당 학교 교육과정 총 이수 학점을 충족해야 함을 고려하여 허가\n다) 계열을 달리하는 전·편·재입학 허가 시 학교별 교육과정 차이를 신중히 고려하고, 진학 및 취업 제한 등의 불이익이 발생할 수 있음을 학생과 학부모에게 충분히 안내한 후 허가' },
+  J31ga: { t: '지침 Ⅲ-1-가. 전입학 대상자(타 시·도)', p: '지침 5쪽', x: '타 시도 소재 고등학교에 재학 중인 자로서 전 가족의 거주지가 단독세대를 구성하여 경상남도로 이전된 자(동일 학군 내 거주지 이전으로 인한 고등학교 전입학은 불가함)\n※ "전 가족"은 부·모 및 전입학 대상 학생\n※ 주민등록상 전 가족이 단독세대(부 또는 모가 세대주인 거주지에 등재된 경우)를 구성하여 이전한 경우에 한하며, 동거인으로 등재된 경우 거주지 이전으로 인정하지 않음(위장전입의 경우 해당 학군 또는 지역으로 전입학 불가)\n※ 단, 부 또는 모가 불가피하게 함께 이전할 수 없는 경우, 추가 서류를 제출한 자는 전 가족의 거주지가 이전된 것으로 간주함(9쪽)' },
+  J31na: { t: '지침 Ⅲ-1-나. 전입학 대상자(도내)', p: '지침 5쪽', x: '경상남도 고등학교에 재학 중인 자로서 전 가족의 거주지가 단독세대를 구성하여 타 학군으로 이전된 자\n※ 단, 특수목적고등학교, 전국단위 모집 고등학교, 비평준화지역 일반고등학교에 입학한 자의 경우 거주지 이전 없이 1학년 1학기 이후 전입학 신청 가능(12~13쪽)' },
+  J31etc: { t: '지침 Ⅲ-1-다~차. 기타 전입학 대상자', p: '지침 5~6쪽', x: '다. 「혁신도시 조성 및 발전에 관한 특별법」 제28조에 의거 거주지가 경상남도로 이전된 자\n라. 「군인복지기본법」 제11조 및 같은 법 시행령 제8조에 따른 군인(군무원) 자녀(보호자가 소속(발령)된 군부대 주둔지역 학군의 학교로 전입학 가능)\n마. 교육환경 전환 대상자\n바. 학교폭력예방법 제17조제1항제8호에 따른 가해 학생으로 학교장이 교육감에게 배정 요청한 자\n사. 교원지위법 제25조제2항제6호에 따른 침해 학생으로 학교장이 교육감에게 배정 요청한 자\n아. 도내 체육특기자가 팀 해체, 운동이 불가능할 정도의 신체질환 등으로 자격을 상실하여 거주지 학군 소재 고등학교로 전입학을 희망하는 자\n자. 인구감소지역 지방자치단체가 설치·운영하는 센터 및 기숙사에 거주지를 두고 전입학을 요청한 자\n차. 진로변경 전입학제에 따라 전입학을 요청한 자(연 1회, 6월 중 공문, 8월 중 시행)' },
+  J32: { t: '지침 Ⅲ-2. 교육환경 전환 전입학', p: '지침 6~7, 10~11쪽', x: '학교장이 교육상 교육환경을 바꾸어 줄 필요가 있다고 인정한 자에 대하여 부모의 동의를 얻어 전입학을 추천(생활지도 상의 문제로 인한 권고전학 또는 통학거리 사유 제외). 재적교 기피·특정학교 배정 목적으로 이용될 수 없음.\n대상: 1) 가정폭력·아동학대·성폭력 피해학생 2) 학교폭력 피해 학생(학교장자체해결 사항은 전입학 불가) 3) 희귀질환·암·1형 당뇨 등 중증 질병으로 현 재적교 등·하교가 어려운 자 4) 학교생활 부적응이 심각한 학생(학기 초 단순 부적응·교우 갈등 제외, 입학일로부터 3개월 이후 신청) ※ 교직원 자녀로 부(모)와 같은 학교 재학 중인 희망자\n절차: 재적교 접수 → 도교육청 중등교육과 공문 → 전입학심의위원회 심의(전학 여부·배정학교 결정) → 학교간 처리' },
+  J34: { t: '지침 Ⅲ-4. 제출서류', p: '지침 9~11쪽', x: '가. 일반 전입학\n[공통] 1. 고등학교 전입학 배정원서(평준화: 서식1-1·1-2) 또는 전입학 신청서(비평준화: 서식1-3) 2. 주민등록등본(행정정보 공동이용 시 미제출) 3. 개인정보 수집 및 이용 동의서(서식2)\n[추가: 부 또는 모가 불가피하게 함께 이전할 수 없는 경우] 사유에 따라 학생명의 가족관계증명서, 학생명의 기본증명서(상세), 친권자 전입학 동의서(서식6) 중 해당 서류와 아래 기타서류(사유별 대응은 지침 9쪽 표 확인)\n- 부 또는 모가 주소를 이전할 수 없는 공무원·직장인 또는 사업가: 이전하지 못하는 부 또는 모의 주민등록등본, 재직증명서 또는 사업자등록증\n- 부 또는 모가 행방불명: 경찰관서 신고확인서 또는 말소된 주민등록등본\n- 친권자인 부 또는 모가 신청 / 친권자가 아닌 이혼한 부 또는 모가 신청 / 공동친권: 친권자 전입학 동의서(서식6), 동의를 받지 못하는 경우 친권자 미확인 서약서(서식7)\n- 부모 별거·부모 사망: 가족관계증명서 등으로 확인\n- 전세금 보호를 위한 경우: 행정복지센터에서 확정일자를 받은 전세 계약서 사본\n- 분양(신축) 후 신규 입주 아파트(주택) 전입 예정자(6개월 이내): 전입 예정을 확인할 수 있는 서약서(서식8), 전입과 동시에 해당 학교에 주민등록등본 제출\n- 개인 신용불량 및 파산선고: 개인 파산선고된 자의 확인서(법원 발행)\n- 아동양육시설·가정위탁·보호시설 입소자: 입소증 또는 가정위탁보호확인서\n- 무연고 학생(친권자 연락두절·연락불가), 소년소녀가정: 소년소녀가장임을 증명할 수 있는 서류 또는 기초생활수급자증명서\n- 학생의 부모가 미혼부 또는 미혼모: 부 또는 모의 혼인관계증명서\n- 그 외 전 가족 단독세대 구성이 어려운 자: 가족관계증명서, 기본증명서(상세), 친권자 전입학 동의서, 사유서\n\n나. 교육환경 전환 대상자\n[공통] 1. 전입학 배정원서(교육환경 전환 대상자 등, 서식1-4) 2. 주민등록등본 3. 개인정보 동의서(서식2) 4. 학교장 의견서(서식4) 5. 담임 의견서(서식5)\n[추가] - 가정폭력·아동학대 피해자(택1): 가정폭력상담소·보호시설 발급 상담사실 확인서 / 지방자치단체의 취학지원 요청 공문과 학대피해아동 취학지원 요청서 / 학대피해아동담당 지방자치단체 또는 아동보호전문기관 확인서 (형제자매 등 가족 지원 시 가족관계증명서·등본으로 확인)\n- 성폭력 피해자(택1): 성폭력 상담소·보호시설·성폭력피해자통합지원센터(해바라기센터 등) 장이 발급한 상담사실 확인서 / 병·의원 발급 성폭력피해진단서\n- 학교폭력 피해자: 학교폭력대책심의위원회 조치 결정 통보서 사본(원본대조필), 학부모 사유서(서식3), 심의에 필요한 기타 자료 ※ 학교장자체해결로 해결된 사항은 전입학 불가\n- 희귀질환·암·1형 당뇨 등 중증 질병으로 등·하교가 어려운 자: 종합병원급 의사진단서(신청일 기준 3개월 이내, 「희귀(난치)병(1형 당뇨) 치료 중」 문구), 병원진료확인서, 학부모 사유서(서식3), 담임교사 상담기록 사본\n- 부적응으로 인한 위기 학생: <필수> 학부모 사유서(서식3), 담임교사 상담기록 사본(5회 이상), 상담교사 의견서 및 상담기록 사본(5회 이상) 또는 Wee센터 상담기록(5회 이상, 주 1회 인정)·외부 전문상담기관(3회 이상, 주 1회 인정) <선택> 의료기관 심리치료 증빙, 학업중단숙려제·학교위기관리위원회 회의록 등 노력 증빙\n- 교직원 자녀로 부(모)와 같은 학교 재학 중인 희망자: 학부모 사유서(서식3), 부 또는 모의 재직증명서\n\n다. 체육특기자 포기 학생\n1. 전입학 배정원서(서식1-4) 2. 주민등록등본 3. 개인정보 동의서(서식2) 4. 학교장 의견서(서식4) 5. 담임 의견서(서식5) 6. 학부모 사유서(서식3) 7. 체육특기자소위원회 회의록 사본(원본대조필) 8. 사유별: 팀 해체 - 해체 사유서 / 신체질환 - 종합병원급 진단서(최근 3개월 이내) / 기능 부족 - 감독교사 의견서(입학·전입학일로부터 3개월 이후 신청 가능)' },
+  J35na: { t: '지침 Ⅲ-5-나. 평준화지역 배정 기준', p: '지침 12쪽', x: '접수순으로 전입학 허용 범위 내에서 희망하는 5개 학교 중 추첨 배정한다. (배정원서 접수: 도교육청 중등교육과 방문 또는 팩스, 결과는 학교 공문·보호자 문자. 배정일로부터 7일 이내 수속하지 않으면 배정 취소)' },
+  J35da: { t: '지침 Ⅲ-5-다. 평준화지역 전입학 기본 방침', p: '지침 12~13쪽', x: '1) 평준화지역 일반고 재학 중 타 학군·타 지역으로 전입학하였다가 다시 전입학을 원할 때는 재학기간 3개월 이상일 때 신청(거주지 재이전도 동일)\n2) 경남 중학교 졸업 후 특수목적고 또는 전국단위 모집 고등학교에 진학하여 한 학기 이상 재학한 자는 일반고로 전입학 신청 가능(거주지 내 동일 계열 원칙, 타 계열은 진로변경 기준 충족)\n3) 다른 학교로 전입학하였다가 다시 동일 학군으로 전입하는 자는 전출 이전의 재적 학교로 배정 원칙\n4) 평준화지역 일반고 재학자는 동일 학군 내 타 일반고로 전입학할 수 없다\n5) 평준화지역 입학전형에 불합격·응시 포기하고 비평준화지역 일반고에 입학한 자는 재학기간 한 학기 이후에 전입학 신청 가능\n7) 학력인정 평생교육시설, 고등기술학교, 산업체부설고, 방송통신고, 공군항공과학고 재학생은 평준화지역 일반고 전입학 대상에서 제외(동일 형태 학교 간 허용)\n9) 학교폭력 가해학생은 민주시민교육과 심의에 따라 배정, 피해학생 재학학교와 거리 10km(대중교통 최적거리) 가급적 준수' },
+  J35sa: { t: '지침 Ⅲ-5-사. 거주지 조사·위장전입', p: '지침 14~16쪽', x: '일반고 간 전학은 거주지 이전으로 통학여건이 불편해진 학생을 위한 제도로, 실제 거주지 이전 없이 재적교를 기피하거나 특정학교 배정 목적으로 이용될 수 없다. 전입교의 장은 공정한 거주지 조사를 할 수 있다(서식10 동의서, 서식11 보고서).\n6) 가) 위장전입 판명 시 교육감은 배정을 취소할 수 있음(위장전입 시 6개월간 전입학을 불허할 수 있음)\n나) 학교 전입일 기준 거주기간과 재학기간(방학 제외) 3개월 미만에 직전 학교군의 거주지로 이전하는 경우 원적교로 환원\n5) 거주 사실 판단 기준 - 실거주로 간주: 가. 부모가 이혼 후 재혼 등으로 어머니(친모)에게 동거인으로 등재된 경우 나. 부모의 사망 등으로 형·자매·친척에게 동거인으로 등재된 경우 다. 부 또는 모가 주소를 이전할 수 없는 생업종사자(공무원·군인·회사원 등)로 타 지방 또는 다른 학군에 실거주하는 경우 라. 기타 부모가 불가피하게 함께 이전할 수 없는 경우로서 증빙서류를 제출한 경우' },
+  J42: { t: '지침 Ⅳ-2-가-3). 편입학 시기와 학습권 보호 단서', p: '지침 28쪽', x: '편입학은 해당 학교의 교육과정 이수에 지장이 없는 범위인 당해 학년 수업일수의 3분의 2 이상 남은 시점까지 수시로 입급할 수 있음\n※ 학생의 출석일수가 당해 학년 수업일수의 3분의 2 미만이 될 경우에는 수료 또는 졸업 인정이 되지 않으므로 원칙적으로 당해 학년도 입학·편입학 등은 불가능함\n※ 다만, 학생과 학부모가 원할 경우 당해 학교장은 학교의 교육 여건 등을 고려하여 학생의 학습권 보호 차원에서 허가할 수 있음. 이때 학교에서는 허가에 앞서 학생, 학부모에게 당해 학년도에는 출석일수 부족으로 수료 또는 졸업이 되지 않음을 정확히 주지 및 확인시켜 주어야 함\n(전입학에는 명시 규정이 없어 「원칙적으로」 불가의 예외로 준용 여부를 학교가 판단)' },
+  J36na: { t: '지침 Ⅲ-6-나. 비평준화지역 고등학교 전입학 기본 방침', p: '지침 17쪽', x: '1) 총칙 및 평준화지역 일반고 배정 원칙에 준하여 교육과정 이수에 지장이 없는 범위 내에서 학교장이 정하는 학칙에 의하여 시행하고, 학칙을 홈페이지에 탑재\n2) 학교 내 전편입학심의위원회에서 허가 여부 결정(서류전형, 필기시험 등 어떠한 종류의 평가도 할 수 없으며, 학교생활기록부를 요구할 수 없음)\n3) 전 가족이 거주 이전한 후 구비 서류를 완비하여 신청하면 전입학 해당 법규에 위배되는 결격 사유가 없는 한 허가하여야 하며, 학생의 성적이나 전 재적교의 결석 등 생활지도 상의 문제를 이유로 불허할 수 없다(법령이나 지침에 의하지 않고 학교 자체적으로 정한 결격 사유에 의해 불허할 수 없음)\n4) 특성화고 재학생이 비평준화지역으로 이전하였으나 해당 학군에 특성화고가 없으면 인근 지역 특성화고에서 허가 가능\n5) 타 학교로 전학을 가고자 하는 학생에 대하여 소속 학교에서 이를 제한할 수 없다\n다. 학생 정원 및 현원 현황은 민원인 요구 시 열람' },
+  J37: { t: '지침 Ⅲ-7. 진로변경 전입학제', p: '지침 19~23쪽', x: '경남 일반고·자공고 1학년 재학생 → 거주지 학군 특성화고, 특성화고·마이스터고 1학년 재학생 → 거주지 학군 일반고·자공고(진해는 거주지 학군에 특성화고가 없어 인근 창원·마산 특성화고로 신청 가능). 연 1회(8월 중).\n신청 제외: 미인정 결석 3일 이상 / 미인정 결석 2일 + 미인정 지각·조퇴·결과 합 4회 이상 / 결석 1일 + 합 7회 이상 / 지각·조퇴·결과 합 10회 이상 / 학교폭력 가해·교육활동 침해 사안 진행 중이거나 조치를 받은 학생 / 학교선도규정 \'사회봉사\' 이상 징계\n허용 인원: 특성화고→일반고는 기준일 현재 1학년 정원 내 결원 수, 일반고→특성화고는 1학년 정원 내 결원 수 + 정원 외 2% 이내\n특성화고→비평준화지역 일반고는 거주지 학군 1개 학교 신청(학교장 허가). 각종학교·고등기술학교 등은 적용 제외' },
+  J5: { t: '지침 Ⅴ. 귀국학생 등의 입학 및 편입학', p: '지침 29~33쪽', x: '귀국학생 등: 외국에서 귀국한 학생, 재외국민 자녀, 북한이탈주민, 외국인 학생 등(「초·중등교육법 시행령」 제19조)\n신청 기한: 외국 정규교육기관 최종 재학일과 편입학 신청일 사이 공백이 1개월 이내(2/3 미달이어도 수료하려면 1개월 이내 신청, 그렇지 않으면 1개월 이후에도 신청 가능)\n인정유학: 외국 정규학교 이수기간 6개월(한 학기) 이상. 신청은 교육청이 아닌 주소지 관할 고등학교에 직접\n수료기준 출석일수: 입급일부터 학년 종료일까지 남은 수업일수의 3분의 2 이상' },
+  J6: { t: '지침 Ⅵ. 학년결정 입학', p: '지침 37~40쪽', x: '해당 학년 정원의 2% 범위 내 정원 외 편입학. 원적교와 계열이 다르면 2학년 1학기까지, 동일 계열은 3학년 1학기까지. 원서 접수: 학기 시작 전 10일 ~ 시작 후 10일 이내. 신청 자격: 전 가족이 신청학교 관할 지역에 거주하며 학교 외 학습경험 기준 충족. 3학년 2학기 입학은 불가. 조기진급·졸업·진학 평가위원회의 심의와 교과목별 이수인정평가 후 학교장 결정' },
+  W22: { t: '웅천고 학교규칙 제22조(전·편입학)', p: '규정집 4쪽', x: '① 본교에 전·편입학을 지원하는 자가 있을 때에는 결원이 있는 경우에 한하여 본교 교육과정을 이수하는데 지장이 없는 범위 안에서 학교의 장이 허가할 수 있다.\n② 본교의 전·편입학은 \'경상남도 고등학교 전·편입학 및 재입학 업무 시행지침\'에 따르며, 필요시 별도의 규정을 둘 수 있다.\n③ 1. 외국에서 부모 모두 함께 2년 이상 거주하고, 2년 이상 재학한 귀국자의 자녀에 대하여 학교장은 해당학년 정원의 5% 범위 내에서 정원 외로 특례 입학 및 전·편입학을 허가할 수 있다. 2. 특례입학대상자가 아닌 일반귀국자는 정원 범위 내에서 전·편입학을 허가할 수 있다.\n④ 가정폭력 및 성폭력피해자가 주소지 이외의 지역에서 취학할 필요가 있을 때 학교의 장이 허가할 수 있다.' },
+  W23: { t: '웅천고 학교규칙 제23조(학년결정 입학)', p: '규정집 5쪽', x: '② 학년결정 입학은 해당 학년 정원의 2% 범위 내에서 정원 외로 편입학을 허용하며, 입학 허용 시기는 2학년 1학기, 2학년 2학기, 3학년 1학기로 한다.' },
+  R2: { t: '웅천고 전·편입학 규정 제2·4조(위원회)', p: '규정집 142쪽', x: '제2조 ② 위원회는 교감(위원장), 교무기획부장, 교육과정부장, 해당 학년부장, 학적담당교사(간사)로 구성한다.\n제4조 ② 회의는 재적 위원 과반수의 출석과 출석 위원 5분의 3 이상 찬성으로 의결한다.' },
+  R5: { t: '웅천고 전·편입학 규정 제5조(허용 범위)', p: '규정집 142쪽', x: '전·편입학 및 재입학 허용 범위는 경상남도 고등학교 전·편입학 업무 시행 지침에 따른다.' },
+  R6: { t: '웅천고 전·편입학 규정 제6조(본교 전입 허용 범위)', p: '규정집 142쪽', x: '경상남도 고등학교 전·편입학 업무 시행 지침에 부합하고 다음 각 호의 충족 여부를 위원회에서 심의하여 전입학을 허용한다. 단, 다음에 명시되지 않은 사항은 위원회에서 정한다.\n① 교육과정 이수에 지장이 없는 학생\n② 거주지가 관내 다른 학교보다 거리상 본교에 현저히 가까운 학생\n③ 위원회 위원 만장일치로 전입에 동의하는 학생\n④ 본교 재학 중 타 학군 및 타 지역의 고등학교로 전학하였다가 다시 본교로 전학을 원하는 경우, 신청일 기준 거주 기간과 학생의 재학 기간이 각각 3개월(90일) 이상일 때 신청할 수 있음(거주지 재이전의 경우도 동일하게 적용)' },
+  R7: { t: '웅천고 전·편입학 규정 제7조(미이수 과목)', p: '규정집 142쪽', x: '전·편입학으로 인해 교육과정 운영상의 미이수 과목이 발생할 경우 그로 인한 진학 또는 취업상의 불이익은 본인이 감수한다. (별지 확인서: 미이수 과목으로 인한 불이익에 대하여 충분한 설명과 안내를 받았으며 책임은 본인에게 있음을 확인)' }
+};
+
+/* ===== 판정 엔진 ===== */
+var CUR_EX = {}; // 현재 판정에 적용할 예외 체크 {id:true}
+var ST = {
+  ok: { l: '충족', c: 'ok' }, bad: { l: '위배·불가', c: 'bad' }, review: { l: '심의·조건부', c: 'review' },
+  check: { l: '확인 필요', c: 'check' }, na: { l: '해당 없음', c: 'na' }, info: { l: '안내', c: 'info' }, step: { l: '절차', c: 'step' }
+};
+function pd(s) { if (!s) return null; var a = s.split('-'); return new Date(+a[0], +a[1] - 1, +a[2]); }
+function fmt(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+function addD(d, n) { var x = new Date(d); x.setDate(x.getDate() + n); return x; }
+function hav(a, b, c, d) { var R = 6371, r = Math.PI / 180, x = Math.sin((c - a) * r / 2), y = Math.sin((d - b) * r / 2); var h = x * x + Math.cos(a * r) * Math.cos(c * r) * y * y; return 2 * R * Math.asin(Math.sqrt(h)); }
+
+function needDays(cal) { return Math.ceil(calTotal(cal) * 2 / 3); }
+/* 학사일정의 수업일 목록(학기 기간 평일 - 휴업일) */
+function schoolDays(cal) {
+  var out = [], hol = {}; (cal.holidays || []).forEach(function (x) { hol[x] = 1; });
+  (cal.periods || []).forEach(function (p) {
+    for (var d = pd(p[0]), e = pd(p[1]); d <= e; d = addD(d, 1)) { var w = d.getDay(); if (w >= 1 && w <= 5 && !hol[fmt(d)]) out.push(fmt(d)); }
+  });
+  return out;
+}
+function calTotal(cal) { return schoolDays(cal).length; }
+/* 기준 학사일정에서 date(포함) 이후 남은 수업일수. 범위 밖이면 null */
+function remainingDays(cal, ds) {
+  var d = pd(ds); if (!d) return null;
+  if (d < pd(cal.start) || d > pd(cal.end)) return null;
+  return schoolDays(cal).filter(function (x) { return x >= ds; }).length;
+}
+function weekTable(cal) {
+  var days = schoolDays(cal), m = {};
+  days.forEach(function (x) { var d = pd(x), mon = addD(d, 1 - (d.getDay() || 7)); var k = fmt(mon); m[k] = (m[k] || 0) + 1; });
+  return Object.keys(m).sort().map(function (k) { return [k, m[k]]; });
+}function schoolYearOf(ds) { var d = pd(ds); return d.getMonth() >= 2 ? d.getFullYear() : d.getFullYear() - 1; }
+function semesterOf(cal, ds) {
+  var d = pd(ds), y = schoolYearOf(ds);
+  var s2 = y === cal.year ? pd(cal.sem2) : (y === cal.year + 1 ? pd(cal.nextSem2) : new Date(y, 7, 15));
+  return d >= s2 ? 2 : 1;
+}
+
+/* 정원 판정 */
+function quotaCheck(Q, grade, catKey, opt) {
+  opt = opt || {};
+  var q = Q.g[grade], ent = +q.ent, inside = +q.inside, vacIn = ent - inside;
+  var total10 = 0; OUT_CATS.forEach(function (c) { if (c.in10) total10 += +(q.out[c.k] || 0); });
+  var cap10 = Math.floor(ent * 0.10);
+  if (catKey === 'unlimited') return { st: 'ok', v: '정원 외 비율 제한 없음 유형', why: '지침 Ⅱ-3: 해당 유형은 정원 외 비율 제한 없음' };
+  if (catKey === 'insideOnly') {
+    return vacIn > 0 ? { st: 'ok', v: grade + '학년 정원 내 결원 ' + vacIn + '명', why: '정원 내 결원 범위에서 허가' }
+      : { st: 'bad', v: grade + '학년 정원 내 결원 0명', why: '정원 내 결원이 없어 불가' };
+  }
+  var cat = OUT_CATS.filter(function (c) { return c.k === catKey; })[0];
+  var pct = opt.pct || cat.pct, cap = Math.floor(ent * pct / 100), cur = +(q.out[catKey] || 0);
+  var v = cat.n + ' ' + cur + '/' + cap + '명(' + pct + '%) · 정원 외 총합 ' + total10 + '/' + cap10 + '명(10%) · 정원 내 ' + inside + '/' + ent + '명';
+  if (cur < cap && total10 < cap10) return { st: 'ok', v: v, why: '정원 외 결원 있음(유형 ' + (cap - cur) + '명, 총합 ' + (cap10 - total10) + '명 남음)' };
+  if (vacIn > 0) return { st: 'review', v: v, why: '정원 외 결원 없음 → 정원 내 결원 ' + vacIn + '명: 전·편입학심의위원회에서 허가 결정' };
+  return { st: 'bad', v: v, why: (cur >= cap ? '해당 유형 정원 외 ' + pct + '% 소진' : '정원 외 총합 10% 소진') + ', 정원 내 결원도 없음' };
+}
+
+function distRank(dongName, gender, ds, manual, geo) {
+  var dg = geo ? [geo.label, geo.lat, geo.lng] : DONGS.filter(function (d) { return d[0] === dongName; })[0];
+  if (!dg && !(manual && manual.me)) return null;
+  var d = pd(ds) || new Date();
+  var list = JINHAE.filter(function (s) {
+    if (s.from && d < pd(s.from)) return false;
+    if (gender === '남' && s.g === '여') return false;
+    if (gender === '여' && s.g === '남') return false;
+    return true;
+  }).map(function (s) {
+    var st = dg ? hav(dg[1], dg[2], s.lat, s.lng) : 99, rd = geo && geo.road && geo.road[s.n] ? geo.road[s.n].km : null;
+    return { s: s, km: rd != null ? rd : st, straight: st, road: rd };
+  });
+  if (manual && manual.me) {
+    list.forEach(function (x) { if (x.s.me) x.km = +manual.me; });
+    if (manual.other) {
+      var others = list.filter(function (x) { return !x.s.me; }).sort(function (a, b) { return a.km - b.km; });
+      if (others[0]) { others[0].km = +manual.other; others[0].manual = true; }
+      others.slice(1).forEach(function (x) { if (x.km < +manual.other) x.km = +manual.other + 0.01; });
+    }
+  }
+  list.sort(function (a, b) { return a.km - b.km; });
+  return list;
+}
+
+var REASONS_IN = [
+  ['general', '일반 전입(거주지 이전 등)'], ['innov', '혁신도시 이전기관 직원 자녀'], ['military', '군인(군무원) 자녀'], ['merit', '국가유공자 자녀'],
+  ['env', '교육환경 전환(가정폭력·학폭 피해·중증질환·부적응·교직원 자녀)'], ['returnee', '귀국학생 등(해외 귀국·재외국민·북한이탈·외국인)'],
+  ['career', '진로변경 전입학제(특성화고 → 일반고)'], ['athlete', '체육특기자 포기'], ['gradeDecide', '학년결정 입학(학교 밖 학습경험)'],
+  ['bully', '학교폭력 가해학생(교육감 배정)'], ['harm', '교육활동 침해학생(교육감 배정)']
+];
+var ORIG_REGION = [
+  ['jinhae', '진해구 내 고등학교(웅천고와 같은 학군)'], ['pyeong', '경남 평준화지역 일반고(창원 성산·의창·마산, 진주, 김해, 거제 교육감 전형)'],
+  ['principal', '평준화지역 내 학교장 전형교(창원대산·창원북면·마산삼진·진서·진영·장유·김해대청 등)'], ['nonpyeong', '경남 비평준화 시·군 고등학교(진해 외)'],
+  ['other', '타 시·도 고등학교'], ['abroad', '해외 학교(귀국)'], ['none', '고등학교 재학 아님(학교 밖·학업중단)']
+];
+var ORIG_TYPE = [
+  ['general', '일반고·자율형공립고'], ['special', '특수목적고(과학·외국어·국제·예술·체육)'], ['national', '전국단위 모집 고등학교(자사고·전국모집 일반고 등)'],
+  ['voc', '특성화고·마이스터고·일반고 직업계열 학과'], ['etc', '각종학교·고등기술학교·방송통신고·평생교육시설'], ['none', '해당 없음(해외·학교 밖)']
+];
+var RESIDENCE = [
+  ['moved', '전 가족(부·모·학생)이 진해구로 이전, 단독세대 구성'], ['partial', '부 또는 모가 불가피하게 미이전(직장·별거 등) + 추가서류 구비'],
+  ['always', '전 가족이 원래 진해구 거주(이전 없음)'], ['cohabit', '동거인 등재·학생만 이전·친척집 등재'], ['outside', '전 가족이 진해구 밖 거주']
+];
+
+function docsIn(f) {
+  var D = [];
+  var common = ['고등학교 전입학 신청서(비평준화지역, 서식1-3)', '주민등록등본(행정정보 공동이용 시 생략)', '개인정보 수집·이용 동의서(서식2)'];
+  switch (f.reason) {
+    case 'env':
+      D = ['전입학 배정원서(교육환경 전환 대상자 등, 서식1-4)', '주민등록등본', '개인정보 동의서(서식2)', '학교장 의견서(서식4)', '담임 의견서(서식5)', '학부모 사유서(서식3)'];
+      if (f.envSub === 'violence') D.push('가정폭력 상담사실 확인서 / 학대피해아동 확인서 / 성폭력 상담사실 확인서 중 해당');
+      if (f.envSub === 'bullied') D.push('학교폭력대책심의위원회 조치 결정 통보서 사본(원본대조필)');
+      if (f.envSub === 'ill') D.push('종합병원급 의사진단서(3개월 이내, 희귀·난치 문구) + 병원진료확인서');
+      if (f.envSub === 'maladj') D.push('담임 상담기록 5회 이상, 상담교사 의견서·상담기록 5회 이상 또는 Wee센터·외부기관 상담기록');
+      if (f.envSub === 'staff') D.push('부 또는 모의 재직증명서');
+      break;
+    case 'athlete':
+      D = ['전입학 배정원서(서식1-4)', '주민등록등본', '서식2~5', '체육특기자소위원회 회의록 사본(원본대조필)', '사유별: 해체 사유서 / 종합병원 진단서(3개월 이내) / 감독교사 의견서']; break;
+    case 'returnee':
+      D = ['편입학 신청서(학교 양식)', '아포스티유(또는 영사 확인) 재학증명서(입·퇴학일, 학년 명시)', '성적증명서', '국내 이전 학교 학교생활기록부(해당자)', '출입국에 관한 사실증명', '주민등록등본(귀국일 이후 발행)', '예방접종증명서(권장)'];
+      if (f.retSpecial) D.push('학칙 제22조③1호 특례: 부모 동반 2년 이상 외국 거주·2년 이상 재학 증빙');
+      break;
+    case 'career':
+      D = ['전입학 배정원서', '주민등록등본', '학교장 추천서', '자기소개서', '성적증명서', '학교생활기록부', 'NEIS 성적 일람표']; break;
+    case 'gradeDecide':
+      D = ['고등학교 학년결정 입학자용 입학신청서(서식9)', '학교 외 학습경험 증빙(재학증명서·이수증 등)']; break;
+    case 'bully': case 'harm':
+      D = ['도교육청 배정 공문에 따름(학교간 공문 처리)']; break;
+    default:
+      D = common.slice();
+      if (f.reason === 'innov') D.push('보호자 재직증명서(이전 공공기관), 가족관계증명서');
+      if (f.reason === 'military') D.push('보호자 소속(발령) 부대 확인 서류');
+      if (f.reason === 'merit') D.push('지원자 명의 교육지원대상자 증명서');
+  }
+  if (f.residence === 'partial') D.push('부·모 미이전 사유별 추가서류(지침 9쪽 표): 가족관계증명서, 기본증명서(상세), 서식6·7·8, 재직증명서·사업자등록증 등');
+  if (f.courses !== 'none' && f.reason !== 'bully' && f.reason !== 'harm') D.push('미이수 과목 불이익 감수 확인서(웅천고 전·편입학 규정 별지)');
+  return D;
+}
+
+function evalIn(f, Q, cal) {
+  var rows = [], add = function (item, rules, v, st, why, ex) { rows.push({ item: item, rules: rules, v: v, st: st, why: why, ex: ex || null }); };
+  var date = f.date, grade = +f.grade, sem = date ? semesterOf(cal, date) : null;
+  var r = f.reason, reg = f.origRegion, typ = f.origType, res = f.residence;
+  var inJinhae = (res === 'moved' || res === 'partial' || res === 'always');
+  var sems = +f.origSem || 0;
+
+  /* 1. 전입 자격 */
+  (function () {
+    var it = '① 전입 대상 자격·거주지';
+    if (r === 'general' || r === 'innov' || r === 'merit') {
+      if (reg === 'jinhae') return add(it, ['J31ga', 'J35da', 'J36na'], '원적교가 진해구(같은 학군)', 'bad', '같은 학군 안 학교 간 일반 전학은 불가(지침 Ⅲ-1-가 단서, Ⅲ-5-다-4) 준용). 교육환경 전환 등 특례 사유만 가능');
+      if (reg === 'abroad' || reg === 'none') return add(it, ['J31ga'], '원적교 없음/해외', 'bad', '일반 전입 대상이 아님 → 「귀국학생 등」 또는 「학년결정 입학」 유형으로 판정');
+      if (res === 'cohabit') return add(it, ['J31ga', 'J35sa'], '동거인 등재·학생만 이전', 'bad', '동거인 등재는 거주지 이전으로 인정하지 않음(위장전입이면 해당 학군 전입학 불가)', { id: 'in1-cohabit', label: '실거주 간주 사유 해당(이혼·재혼으로 친모의 동거인 등재, 부모 사망으로 형제·친척의 동거인 등재 등, 지침 Ⅲ-5-사-5)', rules: ['J35sa'] });
+      if (res === 'outside') return add(it, ['J31ga', 'J31na'], '전 가족 진해구 밖 거주', 'bad', '전 가족이 단독세대로 웅천고 학군(진해구)에 거주해야 함');
+      if (res === 'moved') return add(it, [reg === 'other' ? 'J31ga' : 'J31na'], '전 가족 진해구 이전(단독세대)', 'ok', '거주지 이전 요건 충족' + (r === 'innov' ? ' + 혁신도시 이전기관 직원 자녀(지침 Ⅲ-1-다)' : '') + (r === 'merit' ? ' + 국가유공자 자녀(교육지원대상자 증명서)' : ''));
+      if (res === 'partial') return add(it, ['J31ga', 'J34'], '부 또는 모 불가피 미이전', 'review', '추가서류(지침 9쪽 표)를 내면 전 가족 이전으로 간주. 서류 확인 후 판단', { id: 'in1-partial', label: '부·모 미이전 사유별 추가서류(지침 9쪽 표) 구비 확인', rules: ['J34'] });
+      if (res === 'always') {
+        if (reg === 'other') return add(it, ['J31ga'], '타 시·도 학교 재학, 가족은 원래 진해 거주', 'check', '지침에 명시 없음(타 시·도 재학생은 경남으로 거주지 이전이 요건). 도교육청 중등교육과 문의');
+        var exc = (typ === 'special' || typ === 'national') ? f.gnMiddle === 'y' : ((reg === 'nonpyeong' || reg === 'principal') && typ === 'general');
+        if (!exc) return add(it, ['J31na', 'J35da'], '거주지 이전 없음', 'bad', '거주지 이전 없이 전입은 특목고·전국단위 모집고(경남 중학교 졸업)·비평준화 일반고 입학자만 가능', { id: 'in1-always', label: '거주지 이전 없는 전입 예외(지침 Ⅲ-1-나 단서) 해당 확인', rules: ['J31na'] });
+        if (sems < 1) return add(it, ['J31na', 'J35da'], '거주지 이전 없음, 원적교 재학 ' + sems + '학기', 'bad', '거주지 이전 없는 전입은 원적교 한 학기(1학년 1학기) 이후 신청 가능');
+        return add(it, ['J31na', 'J35da'], '거주지 이전 없음(진해 거주), 원적교 ' + sems + '학기 재학', 'ok', '특목고·전국단위·비평준화 입학자 예외(지침 Ⅲ-1-나 단서) 해당');
+      }
+    }
+    if (r === 'military') {
+      if (f.milBase !== 'y') return add(it, ['J31etc'], '보호자 소속 부대 주둔지가 진해 아님', 'bad', '군인 자녀는 보호자가 소속(발령)된 부대 주둔지역 학군의 학교로만 전입 가능');
+      return add(it, ['J31etc'], '보호자 소속(발령) 부대 주둔지역: 진해', 'ok', '군인(군무원) 자녀 전입 대상(지침 Ⅲ-1-라)');
+    }
+    if (r === 'env') {
+      if (f.envSub === 'bullied' && f.selfResolved === 'y') return add(it, ['J32'], '학교폭력 피해(학교장 자체해결 건)', 'bad', '학교장자체해결로 해결된 사항은 교육환경 전환 전입학 불가');
+      if (f.envSub === 'maladj' && f.after3m !== 'y') return add(it, ['J32'], '부적응 위기 학생(입학 3개월 미경과)', 'bad', '입학일로부터 3개월 이후 신청 가능, 학기 초 단순 부적응·교우 갈등 제외');
+      if (reg !== 'jinhae' && reg !== 'pyeong' && reg !== 'principal' && reg !== 'nonpyeong') return add(it, ['J32'], '원적교가 경남 고교 아님', 'bad', '교육환경 전환은 경상남도 내 고등학교 재학생 대상');
+      return add(it, ['J32', 'W22'], '교육환경 전환 대상', 'review', '웅천고 단독 결정 아님: 재적교가 도교육청 중등교육과에 공문 → 전입학심의위원회가 전학 여부·배정학교 결정', { id: 'in1-env', label: '도교육청 심의 결과 웅천고 배정 통보 받음', rules: ['J32'] });
+    }
+    if (r === 'returnee') {
+      if (!inJinhae) return add(it, ['J5'], '거주지 진해 아님', 'bad', '귀국학생 등은 주소지 관할 고등학교에 직접 신청');
+      var gap = f.retGap === '' ? null : +f.retGap;
+      if (gap == null) return add(it, ['J5'], '외국 학교 최종 재학일~신청일 공백 미입력', 'check', '공백 1개월 이내인지 확인');
+      if (gap > 31) return add(it, ['J5'], '공백 ' + gap + '일', 'check', '1개월 초과: 신청은 가능하나 수업일수 2/3 미달 시 수료 특례를 받으려면 1개월 이내 신청해야 함', { id: 'in1-retgap', label: '특별한 사유로 1개월 초과 신청 인정(지침 Ⅱ-4-가 「특별한 사유가 없는 한」)', rules: ['J24ga','J5'] });
+      return add(it, ['J5'], '공백 ' + gap + '일(1개월 이내)', 'ok', '귀국학생 등 편입학 대상' + (f.retAbroad6 === 'n' ? ' (외국 정규학교 6개월 미만: 인정유학 아님 → 이수인정평가 필요)' : ''));
+    }
+    if (r === 'career') {
+      if (typ !== 'voc') return add(it, ['J37'], '원적교가 특성화고 등이 아님', 'bad', '진로변경 전입학제(→일반고)는 특성화고·마이스터고 1학년 재학생 대상');
+      if (grade !== 1) return add(it, ['J37'], grade + '학년', 'bad', '1학년 재학생만 신청 가능');
+      if (!inJinhae) return add(it, ['J37'], '거주지 진해 아님', 'bad', '거주지 학군의 일반고로만 신청');
+      var ab = +f.cAbs || 0, lt = +f.cLate || 0, ex = ab >= 3 || (ab === 2 && lt >= 4) || (ab === 1 && lt >= 7) || lt >= 10 || f.cDisc === 'y';
+      if (ex) return add(it, ['J37'], '미인정 결석 ' + ab + '일, 지각·조퇴·결과 ' + lt + '회' + (f.cDisc === 'y' ? ', 징계/학폭·교권 조치' : ''), 'bad', '진로변경 신청 제외 대상(출결·징계 기준)');
+      return add(it, ['J37'], '미인정 결석 ' + ab + '일, 지각·조퇴·결과 ' + lt + '회', 'ok', '신청 제외 기준 해당 없음(학교장 추천 필요)');
+    }
+    if (r === 'athlete') {
+      if (!inJinhae) return add(it, ['J31etc'], '거주지 진해 아님', 'bad', '거주지 학군 소재 고교로만 전입 가능');
+      if (reg === 'other' || reg === 'abroad' || reg === 'none') return add(it, ['J31etc'], '도내 체육특기자 아님', 'bad', '경상남도 내 고교 재학 체육특기자 대상');
+      return add(it, ['J31etc', 'J34'], '체육특기자 자격 상실(팀 해체·신체질환·기능 부족)', 'review', '재적교 체육소위원회 심의 → 웅천고 전·편입학심의위원회 심의', { id: 'in1-ath', label: '재적교 체육소위원회 심의 완료·사유별 증빙 구비', rules: ['J34'] });
+    }
+    if (r === 'gradeDecide') {
+      if (!inJinhae) return add(it, ['J6'], '거주지 진해 아님', 'bad', '전 가족이 신청학교 관할 지역에 거주해야 함');
+      return add(it, ['J6', 'W23'], '학교 외 학습경험 ' + (f.gdExp || '?') + '학기', 'review', '조기진급·졸업·진학 평가위원회 심의와 교과목별 이수인정평가 결과로 학년 결정', { id: 'in1-gd', label: '평가위원회 심의·교과목별 이수인정평가 통과', rules: ['J6'] });
+    }
+    if (r === 'bully' || r === 'harm') {
+      return add(it, ['J31etc', 'J35da'], r === 'bully' ? '학교폭력 가해학생(전학 조치)' : '교육활동 침해학생(전학 조치)', 'review', '학교가 받는 신청이 아님: 재적교가 교육감에게 배정 요청 → 도교육청 심의 후 배정' + (f.victim10 === 'n' ? '. 피해학생 재학교와 10km 미만이면 배정 제한(가급적 준수)' : ''), { id: 'in1-assign', label: '도교육청 배정 통보 받음', rules: ['J31etc'] });
+    }
+  })();
+
+  /* 2. 계열·허용 시기 */
+  (function () {
+    var it = '② 계열·허용 시기';
+    if (!date) return add(it, ['J24ga'], '전입 예정일 미입력', 'check', '날짜를 입력하세요');
+    var when = grade + '학년 ' + sem + '학기(' + date + ')';
+    if (r === 'returnee') return add(it, ['J24ga', 'J5'], when, 'ok', '귀국학생 등은 전 학년 가능');
+    if (r === 'gradeDecide') {
+      var okSem = (grade === 2) || (grade === 3 && sem === 1);
+      var s0 = sem === 1 ? (schoolYearOf(date) === cal.year ? pd(cal.sem1) : new Date(schoolYearOf(date), 2, 2)) : (schoolYearOf(date) === cal.year ? pd(cal.sem2) : pd(cal.nextSem2));
+      var diff = Math.round((pd(date) - s0) / 864e5);
+      if (!okSem) return add(it, ['J6', 'W23'], when, 'bad', '학년결정 입학은 2학년 1학기·2학년 2학기·3학년 1학기만 가능');
+      if (Math.abs(diff) > 10) return add(it, ['J6'], when + ', 학기 시작일과 ' + diff + '일 차이', 'bad', '원서 접수는 학기 시작 전 10일 ~ 시작 후 10일 이내');
+      return add(it, ['J6', 'W23'], when, 'ok', '허용 학기·접수 기간 안');
+    }
+    if (typ === 'etc') return add(it, ['J35da', 'J36na'], '원적교: 각종학교·고등기술학교 등', 'bad', '일반고 전입 대상에서 제외(동일 형태 학교 간만 허용)');
+    var other = typ === 'voc';
+    if ((r === 'bully' || r === 'harm') && !other) return add(it, ['J24da1'], when, 'ok', '학폭 가해·교육활동 침해 학생의 동일 계열 전입은 시기 제한 없음');
+    if (other) {
+      if (grade === 1) return add(it, ['J24ga', 'J24da1', 'J24da2'], when + ', 타 계열(특성화→일반고)', r === 'career' ? 'ok' : 'review', '타 계열은 2학년 1학기 시작 전(2월 말일)까지. ' + (r === 'career' ? '진로변경 전입학제(연 1회 8월) 일정 확인' : '타 계열 전입은 진로변경 전입학 신청 기준 충족 필요(지침 Ⅲ-5-다-2), 교육과정 차이 안내'), { id: 'in2-voc', label: '진로변경 신청 기준 충족·교육과정 차이(진학·취업 불이익) 안내 완료', rules: ['J24da2','J35da'] });
+      return add(it, ['J24ga'], when + ', 타 계열', 'bad', '타 계열 고교 간 전입은 2학년 1학기 시작 전(2월 말일)까지만 가능' + (f.fromSportsHS === 'y' ? ' (경남체육고 체육특기자 포기생은 2학년 1학기 2차고사 전까지)' : ''), (f.fromSportsHS === 'y' && grade === 2 && sem === 1) ? { id: 'in2-sports', label: '경남체육고 체육특기자 포기생으로 2학년 1학기 2차고사 전 신청', rules: ['J24ga'] } : null);
+    }
+    if (grade === 3 && sem === 2) return add(it, ['J24ga'], when, 'bad', '동일 계열 전입은 웅천고 3학년 2학기 시작 전까지만 가능');
+    return add(it, ['J24ga'], when + ', 동일 계열', 'ok', '3학년 2학기 시작 전');
+  })();
+
+  /* 3. 정원 */
+  (function () {
+    var it = '③ 정원(결원)';
+    var key = { general: 'general', innov: 'innov', military: 'military', merit: 'merit', env: 'env', returnee: 'returnee', gradeDecide: 'gradeDecide', bully: 'unlimited', harm: 'unlimited', athlete: 'unlimited', career: 'insideOnly' }[r];
+    var qc = quotaCheck(Q, grade, key);
+    var rules = ['J23', 'W22', 'R5']; if (r === 'career') rules = ['J37']; if (r === 'gradeDecide') rules.push('W23');
+    var why = qc.why;
+    if (r === 'returnee') why += f.retSpecial === 'y' ? ' ※ 학칙 제22조③1호는 특례 귀국자 정원 외 5%로 지침(3%)과 다름: 지침 3% 기준으로 판정' : ' ※ 학칙 제22조③2호: 특례 아닌 일반귀국자는 「정원 범위 내」 허가 → 지침(정원 외 3%)과 다름, 위원회 확인';
+    if (r === 'env') why += ' (배정은 도교육청 심의)';
+    var st3 = r === 'returnee' && qc.st === 'ok' ? 'review' : qc.st;
+    add(it, rules, qc.v, st3, why, r === 'returnee' && qc.st === 'ok' ? { id: 'in3-ret', label: '학칙 제22조③ 적용 여부 위원회 확인 완료', rules: ['W22'] } : (qc.st === 'review' ? { id: 'in3-inside', label: '위원회가 정원 내 결원으로 전입 허가 의결', rules: ['J23'] } : null));
+  })();
+
+  /* 4. 출석일수 2/3 */
+  (function () {
+    var it = '④ 출석일수(수업일수 2/3)';
+    if (r === 'returnee') return add(it, ['J5'], '입급일부터 학년말까지 남은 수업일수의 2/3', 'ok', '귀국학생 등은 남은 수업일수 기준으로 수료');
+    if (r === 'gradeDecide') return add(it, ['J6'], '학기 시작 시점 편입', 'na', '학년결정 입학은 학기 시작 전후 10일 안에 입학');
+    var need = needDays(cal), rem = f.remOverride !== '' && f.remOverride != null ? +f.remOverride : (date ? remainingDays(cal, date) : null);
+    if (rem == null) return add(it, ['J24da2'], date ? '기준 학사일정(' + cal.year + '학년도) 밖의 날짜' : '전입 예정일 미입력', 'check', '「웅천고 남은 수업일수」를 직접 입력하세요(기초자료 탭에서 학사일정 갱신 가능)');
+    if (f.attended === '' || f.attended == null) return add(it, ['J24da2', 'R6'], '웅천고 남은 수업일수 ' + rem + '일, 원적교 출석일수 미입력', 'check', '원적교 당해 학년 출석일수 + ' + rem + '일 ≥ ' + need + '일인지 확인 (필요 원적교 출석 ' + Math.max(0, need - rem) + '일 이상)');
+    var tot = +f.attended + rem;
+    if (tot >= need) return add(it, ['J24da2', 'R6'], '원적교 ' + f.attended + '일 + 웅천고 남은 ' + rem + '일 = ' + tot + '일 ≥ ' + need + '일', 'ok', '수업일수(' + calTotal(cal) + '일)의 2/3 충족');
+    return add(it, ['J24da2', 'R6'], '원적교 ' + f.attended + '일 + 웅천고 남은 ' + rem + '일 = ' + tot + '일 < ' + need + '일', 'bad', '2/3 미달 → 수료 불가로 원칙적 당해 학년도 전입 불가', { id: 'in4-learn', label: '학습권 보호 차원 학교장 허가(당해 학년 수료·졸업 불가를 학생·학부모에게 안내·확인, 지침 Ⅳ-2-가-3) 단서 준용)', rules: ['J42'] });
+  })();
+
+  /* 5. 교육과정 이수 */
+  (function () {
+    var it = '⑤ 교육과정 이수(미이수 과목)';
+    if (r === 'bully' || r === 'harm') return add(it, ['J24da2'], '배정 후 확인', 'info', '배정 후 미이수 과목 확인');
+    if (f.courses === 'none') return add(it, ['J24da2', 'R6', 'R7'], '원적교·웅천고 편성 대조 결과 미이수 과목 없음', 'ok', '교육과정 이수에 지장 없음');
+    if (f.courses === 'some') return add(it, ['J24da2', 'R6', 'R7'], '미이수 예상 과목: ' + (f.missing || '(입력 없음)'), 'review', '확인서(규정 제7조 별지) 제출 후 위원회 심의. 총 이수학점 192(교과 174·창체 18) 충족 여부 함께 검토', { id: 'in5-confirm', label: '확인서(규정 제7조 별지) 제출·위원회 승인', rules: ['R7'] });
+    return add(it, ['J24da2', 'R6', 'R7'], '대조 전', 'check', '원적교 편성표와 웅천고 ' + grade + '학년 편성표(기초자료 탭)를 대조하세요');
+  })();
+
+  /* 6. 거리 (규정 제6조②) */
+  (function () {
+    var it = '⑥ 거리(웅천고가 관내 다른 학교보다 현저히 가까운가)';
+    if (['env', 'bully', 'harm', 'returnee', 'gradeDecide'].indexOf(r) >= 0) return add(it, ['R6'], '-', 'na', '해당 유형은 도교육청 배정·별도 절차');
+    if (!f.geo && !f.dong && !f.kmMe) return add(it, ['R6'], '거주지 주소·행정동 미입력', 'check', '거주지 주소를 입력하거나 행정동을 고르세요');
+    var lst = distRank(f.dong, f.gender, date, { me: f.kmMe, other: f.kmOther }, f.kmMe ? null : f.geo);
+    if (!lst) return add(it, ['R6'], '-', 'check', '거리 계산 불가');
+    var me = lst.filter(function (x) { return x.s.me; })[0], rank = lst.indexOf(me) + 1, first = lst[0];
+    var useRoad = lst.some(function (x) { return x.road != null; });
+    var txt = lst.slice(0, 4).map(function (x) { return x.s.s + ' ' + x.km.toFixed(1) + 'km' + (x.road != null ? '(직선 ' + x.straight.toFixed(1) + ')' : ''); }).join(', ');
+    var basis = f.kmMe ? '직접 입력' : (f.geo ? '주소(' + f.geo.label + ') 기준 ' + (useRoad ? '도로거리(자동차 경로)' : '직선거리') : f.dong + ' 행정복지센터 기준 직선거리');
+    if (rank === 1) {
+      var second = lst[1], gap = second ? second.km - me.km : 0;
+      return add(it, ['R6'], basis + ': ' + txt, gap >= 1 ? 'ok' : 'review', gap >= 1 ? '웅천고가 가장 가까움(다음 학교보다 ' + gap.toFixed(1) + 'km 가까움)' : '웅천고가 가장 가깝지만 차이가 ' + gap.toFixed(1) + 'km로 작음 → 「현저히」 여부 위원회 판단', gap >= 1 ? null : { id: 'in6-dist', label: '위원회가 거리 요건 충족(예외)으로 인정', rules: ['R6'] });
+    }
+    return add(it, ['R6', 'J36na'], basis + ': ' + txt, 'review', first.s.s + '이(가) ' + (me.km - first.km).toFixed(1) + 'km 더 가까움 → 제6조② 미충족 가능. 단 지침 Ⅲ-6-나-3): 법령·지침에 없는 학교 자체 결격사유로 불허할 수 없음 → 위원회 신중 판단', { id: 'in6-dist', label: '위원회가 거리 요건 충족(예외)으로 인정(규정 제6조 단서, 지침 Ⅲ-6-나-3)', rules: ['R6','J36na'] });
+  })();
+
+  /* 7. 재전입 3개월 */
+  (function () {
+    var it = '⑦ 재전입 3개월(90일)';
+    if (f.reTrans !== 'y') return add(it, ['R6', 'J35da'], '웅천고에서 전출했다가 돌아오는 경우 아님', 'na', '');
+    var a = +f.reRes || 0, b = +f.reEnr || 0;
+    if (a >= 90 && b >= 90) return add(it, ['R6', 'J35da'], '거주 ' + a + '일, 재학 ' + b + '일', 'ok', '각각 90일 이상');
+    return add(it, ['R6', 'J35da', 'J35sa'], '거주 ' + a + '일, 재학 ' + b + '일', 'bad', '신청일 기준 거주기간·재학기간이 각각 3개월(90일) 이상이어야 신청 가능');
+  })();
+
+  /* 8. 위장전입 */
+  if (f.fake === 'y') add('⑧ 위장전입 이력', ['J35sa'], '최근 6개월 안에 위장전입 판명', 'bad', '위장전입 판명 시 6개월간 전입학을 불허할 수 있음', { id: 'in8-fake', label: '6개월 불허는 재량(「불허할 수 있음」): 실거주 확인 후 위원회가 허가 의결', rules: ['J35sa'] });
+  else add('⑧ 위장전입 이력', ['J35sa'], '없음', 'ok', '필요하면 거주지 조사(서식10·11) 실시 가능');
+
+  /* 9. 위원회 심의 */
+  add('⑨ 전·편입학심의위원회 심의', ['R2', 'R6', 'J36na'], '교감·교무기획부장·교육과정부장·해당 학년부장·학적담당', (r === 'env' || r === 'bully' || r === 'harm') ? 'na' : 'step',
+    (r === 'env' || r === 'bully' || r === 'harm') ? '도교육청 배정 사안' : '규정 제6조③은 「만장일치 동의」, 제4조②는 「출석 5분의 3 이상 찬성」으로 서로 다름. 지침상 학생 성적·결석 등 생활지도 사유나 학교 자체 결격사유로는 불허할 수 없음', { id: 'in9-done', label: '위원회 심의·의결 완료(전입 동의)', rules: ['R2','R6'] });
+
+  /* 10. 금지 사항 */
+  add('⑩ 심사 금지 사항', ['J36na'], '서류전형·필기시험·학교생활기록부 요구 금지', 'info', '성적이나 원적교 결석 등 생활지도 문제를 이유로 불허 불가');
+
+  return summarize(rows, docsIn(f), stepsIn(f), null, (r === 'env' || r === 'bully' || r === 'harm') ? '규정상 결격 없음 → 도교육청 심의·배정' : '규정상 결격 사유 없음 → 전·편입학심의위원회 심의 후 학교장 허가');
+}
+
+function stepsIn(f) {
+  if (f.reason === 'env') return ['재적교 상담·서류 접수', '재적교 → 도교육청 중등교육과 공문', '도교육청 전입학심의위원회 심의(전학 여부·배정학교)', '전출교·전입교 공문 → 학교간 전입학 처리'];
+  if (f.reason === 'bully' || f.reason === 'harm') return ['재적교 → 도교육청(' + (f.reason === 'bully' ? '민주시민교육과' : '교육활동보호담당관') + ') 상담·배정 요청', '심의 후 중등교육과 배정', '전출교·전입교 공문 → 학교간 처리'];
+  if (f.reason === 'returnee') return ['주소지 관할 고교(웅천고)에 직접 신청', '거주지·학력 확인, 학년 배정', '학교장 결재', '나이스 편입학 처리'];
+  if (f.reason === 'gradeDecide') return ['학기 시작 전후 10일 안에 신청서·증빙 제출', '조기진급·졸업·진학 평가위원회: 학교 외 학습경험 심의', '교과목별 이수인정평가', '학교장 결정·통보(학기 시작 후 20일 이내)'];
+  if (f.reason === 'career') return ['원적교 학교장 추천', '웅천고 「진로변경 전입학 전형 계획」에 따라 신청(8월)', '학교전형위원회 심의·학교장 허가', '도교육청 결과 보고, 학교간 처리'];
+  return ['전 가족 거주지 이전(단독세대)', '웅천고 교무실(학적 담당)에 해당 학년 결원 확인', '전입학 신청서·구비서류 제출', '전·편입학심의위원회 심의 → 학교장 허가', '웅천고 → 원적교 전출 동의 요청 공문', '나이스 전입 처리'];
+}
+
+/* 예외 처리: 체크한 항목은 충족(예외)으로 바꿈 */
+function applyEx(rows, exSet) {
+  exSet = exSet || {};
+  rows.forEach(function (x) {
+    if (!x.ex && x.st === 'check') x.ex = { id: 'chk-' + x.item.charAt(0), label: '담당자가 확인한 결과 충족', rules: [] };
+    x.exAvail = !!(x.ex && ['bad', 'review', 'check', 'step'].indexOf(x.st) >= 0);
+    if (x.ex) x.exKind = /-done$|^chk-/.test(x.ex.id) ? '확인' : '예외';
+    if (x.exAvail && exSet[x.ex.id]) {
+      x.orig = { st: x.st, why: x.why }; x.st = 'ok'; x.exApplied = true;
+      x.why = (x.exKind === '확인' ? '확인 완료: ' : '예외 인정: ') + x.ex.label + ' (원래 판단: ' + x.orig.why + ')';
+      x.ex.rules.forEach(function (r) { if (x.rules.indexOf(r) < 0) x.rules = x.rules.concat([r]); });
+    }
+  });
+}
+function stLabel(x) { return x.exApplied ? '충족(' + x.exKind + ')' : ST[x.st].l; }
+function summarize(rows, docs, steps, extra, okText) {
+  applyEx(rows, CUR_EX);
+  var bad = rows.filter(function (x) { return x.st === 'bad'; }), rv = rows.filter(function (x) { return x.st === 'review' || x.st === 'check'; });
+  var verdict = bad.length ? { c: 'bad', t: '불가', s: bad.length + '개 항목에서 규정 위배' } : (rv.length ? { c: 'review', t: '조건부 가능', s: '심의·확인 ' + rv.length + '개 항목 남음' } : { c: 'ok', t: '가능', s: okText || '규정상 결격 사유 없음 → 절차 진행' });
+  return { verdict: verdict, rows: rows, bad: bad, pending: rv, exList: rows.filter(function (x) { return x.exApplied; }), docs: docs, steps: steps, extra: extra || null };
+}
+
+/* ===== 전출 ===== */
+var NEW_REGION = [
+  ['jinhae', '진해구(현재와 같은 학군)'], ['p1', '창원 성산구·의창구(평준화 1학군)'], ['p2', '창원 마산합포구·마산회원구(평준화 2학군)'],
+  ['p3', '진주시(평준화 3학군)'], ['p4', '김해시(평준화 4학군)'], ['p5', '거제시(평준화 5학군)'],
+  ['통영', '통영시'], ['사천', '사천시'], ['밀양', '밀양시'], ['양산', '양산시'], ['의령', '의령군'], ['함안', '함안군'], ['창녕', '창녕군'], ['고성', '고성군'],
+  ['남해', '남해군'], ['하동', '하동군'], ['산청', '산청군'], ['함양', '함양군'], ['거창', '거창군'], ['합천', '합천군'], ['other', '타 시·도'], ['abroad', '해외 출국']
+];
+var REASONS_OUT = [['general', '거주지 이전 등 일반 전학'], ['career', '진로변경(일반고 → 특성화고)'], ['env', '교육환경 전환'], ['bully', '학교폭력 가해 전학 조치'], ['harm', '교육활동 침해 전학 조치']];
+var PYEONG_REGION = { p1: '창원', p2: '창원', p3: '진주', p4: '김해', p5: '거제' };
+
+function candidateSchools(f) {
+  var nr = f.newRegion, g = f.gender, out = [];
+  function gOk(s) { return !(g === '남' && s.g === '여') && !(g === '여' && s.g === '남'); }
+  var isPy = /^p\d$/.test(nr), num = isPy ? +nr[1] : 0;
+  GNE.forEach(function (s) {
+    if (!gOk(s)) return;
+    var t = s.t, m = null, how = '', st = 'ok';
+    var jin = JINHAE.some(function (j) { return j.n === s.n; });
+    if (f.reason === 'career') {
+      if (t !== '특성화고') return;
+      var near = nr === 'jinhae' ? (s.r === '창원') : (isPy ? s.r === PYEONG_REGION[nr] : s.r === nr);
+      if (!near) return;
+      how = '진로변경 전입학 전형(학교 홈페이지 계획, 8월) · 학교장 허가' + (s.n === '태봉고등학교' ? ' ※ 체험위주(대안) 특성화고: 학교별 전형 확인' : ''); m = 'career';
+    } else if (nr === 'jinhae') {
+      if (!jin || s.n === '웅천고등학교') return;
+      var jj = JINHAE.filter(function (j) { return j.n === s.n; })[0]; if (jj && jj.from && f.date && pd(f.date) < pd(jj.from)) return;
+      if (f.reason === 'env') { how = '도교육청 교육환경 전환 심의로 배정'; st = 'review'; }
+      else { how = '같은 학군 안 일반 전학 불가'; st = 'bad'; }
+    } else if (isPy) {
+      var py = t === '일반고(평준화 ' + num + '학군)';
+      var pr = t === '일반고(평준화 내 학교장전형)' && PRINCIPAL_AREA[s.n] === num;
+      if (!py && !pr) return;
+      how = py ? '도교육청 배정(희망 5개교 추첨, 서식1-1)' : '해당 학교장 허가(비평준화 지침 준용)';
+      if (f.reason === 'env') how = '도교육청 교육환경 전환 심의로 배정';
+    } else if (nr === 'other' || nr === 'abroad') { return; }
+    else {
+      if (s.r !== nr) return;
+      if (t !== '일반고(비평준화)') return;
+      how = '해당 학교장 허가(학교 전·편입학심의위원회)';
+      if (f.reason === 'env') how = '도교육청 교육환경 전환 심의로 배정';
+    }
+    if (f.reason === 'bully' || f.reason === 'harm') { how = '교육감 배정(학교 선택 불가)'; st = 'review'; }
+    out.push({ n: s.n, r: s.r, t: t, g: s.g, q: s.q, c: s.c, si: s.si || null, tel: s.tel, how: how, st: st });
+  });
+  return out;
+}
+
+/* 학교알리미 공시 재적으로 학년별 자리(정원 내 결원) 추정 */
+function seatInfo(s, grade) {
+  if (!s || !s.si || !s.si.cnt) return null;
+  var gi = (+grade || 1) - 1, cnt = s.si.cnt[gi], cls = s.si.cls ? s.si.cls[gi] : 0;
+  var per = s.q && s.c ? Math.round(s.q / s.c) : null, cap = per && cls ? cls * per : null;
+  return { cnt: cnt, cls: cls, per: per, cap: cap, vac: cap != null ? cap - cnt : null };
+}
+function seatText(si) {
+  if (!si) return { t: '공시 자료 없음', c: 'na' };
+  if (si.vac == null) return { t: si.cnt + '명(학급수 미상)', c: 'na' };
+  return si.vac > 0 ? { t: '여유 약 ' + si.vac + '명', c: 'ok' } : { t: '정원 내 결원 없음' + (si.vac < 0 ? '(정원 외 ' + (-si.vac) + '명 재적)' : ''), c: 'review' };
+}
+function evalOut(f, Q, cal) {
+  var rows = [], add = function (item, rules, v, st, why, ex) { rows.push({ item: item, rules: rules, v: v, st: st, why: why, ex: ex || null }); };
+  var date = f.date, grade = +f.grade, sem = date ? semesterOf(cal, date) : null, nr = f.newRegion, res = f.residence, r = f.reason;
+  var sems = +f.wcSem || 0, isPy = /^p\d$/.test(nr);
+
+  add('① 소속 학교의 전출 제한', ['J36na'], '웅천고 → 타교', 'info', '타 학교로 전학을 가려는 학생을 소속 학교에서 제한할 수 없음(전입교 판단 사항)');
+
+  (function () {
+    var it = '② 전학 사유·거주지 요건';
+    if (r === 'env') return add(it, ['J32'], '교육환경 전환', 'review', '웅천고 학교장 추천(학교장·담임 의견서) → 도교육청 심의·배정. 학교 선택 불가', { id: 'out2-assign', label: '도교육청 심의·배정 통보 받음', rules: ['J32'] });
+    if (r === 'bully' || r === 'harm') return add(it, ['J31etc', 'J35da'], r === 'bully' ? '학교폭력 가해 전학 조치' : '교육활동 침해 전학 조치', 'review', '웅천고 학교장이 교육감에게 배정 요청 → 도교육청 심의 후 배정(피해학생 재학교와 10km 가급적 준수)', { id: 'out2-assign', label: '도교육청 배정 통보 받음', rules: ['J31etc'] });
+    if (r === 'career') {
+      if (grade !== 1) return add(it, ['J37'], grade + '학년', 'bad', '진로변경 전입학제는 1학년 재학생만 신청 가능');
+      var ab = +f.cAbs || 0, lt = +f.cLate || 0, ex = ab >= 3 || (ab === 2 && lt >= 4) || (ab === 1 && lt >= 7) || lt >= 10 || f.cDisc === 'y';
+      if (ex) return add(it, ['J37'], '미인정 결석 ' + ab + '일, 지각·조퇴·결과 ' + lt + '회' + (f.cDisc === 'y' ? ', 징계/학폭·교권 조치' : ''), 'bad', '진로변경 신청 제외 대상');
+      return add(it, ['J37'], '1학년, 출결·징계 제외기준 해당 없음', 'ok', '거주지 학군 특성화고로 신청(진해 거주 시 인근 창원·마산 특성화고). 웅천고 학교장 추천 필요');
+    }
+    if (nr === 'jinhae') return add(it, ['J31ga', 'J35da', 'J36na'], '새 거주지도 진해구', 'bad', '같은 학군 안 거주지 이전으로 인한 전학 불가 → 교육환경 전환 등 특례만 가능');
+    if (nr === 'abroad') return add(it, ['J5'], '해외 출국', 'info', '전학이 아닌 출국에 따른 학적 처리(정당한 해외 출국 시 귀국 후 귀국학생 등으로 편입학)');
+    if (res === 'cohabit') return add(it, ['J31ga', 'J35sa'], '동거인 등재·학생만 이전', 'bad', '거주지 이전으로 인정되지 않음(위장전입)', { id: 'out2-cohabit', label: '실거주 간주 사유 해당(친모·친척의 동거인 등재 등, 지침 Ⅲ-5-사-5)', rules: ['J35sa'] });
+    if (res === 'none') return add(it, ['J31na'], '거주지 변동 없음(진해 거주)', 'bad', '거주지 이전 없이 다른 학군으로 전학할 수 없음');
+    if (nr === 'other') return add(it, ['J31ga'], '타 시·도로 전 가족 이전', res === 'moved' || res === 'partial' ? 'check' : 'bad', '전입 시·도교육청의 전학 지침에 따름(웅천고는 전출 처리)');
+    if (res === 'moved') return add(it, ['J31na'], '전 가족 이전(단독세대)', 'ok', '타 학군 거주지 이전 요건 충족');
+    if (res === 'partial') return add(it, ['J31na', 'J34'], '부 또는 모 불가피 미이전', 'review', '추가서류(지침 9쪽) 제출 시 이전 간주', { id: 'out2-partial', label: '부·모 미이전 사유별 추가서류(지침 9쪽 표) 구비 확인', rules: ['J34'] });
+    if (res === 'always') {
+      if (sems < 1) return add(it, ['J31na', 'J35da'], '원래 해당 지역 거주, 웅천고 재학 ' + sems + '학기', 'bad', '비평준화 일반고 입학자는 거주지 이전 없이 「한 학기 이후」 신청 가능');
+      return add(it, ['J31na', 'J35da'], '원래 해당 지역 거주, 웅천고 재학 ' + sems + '학기', 'ok', '비평준화 일반고(웅천고) 입학자 예외: 거주지 이전 없이 거주지 학군으로 전학 신청 가능' + (isPy ? '(평준화 입학전형 미응시·불합격·등록포기 확인)' : ''));
+    }
+  })();
+
+  (function () {
+    var it = '③ 계열·허용 시기';
+    if (!date) return add(it, ['J24ga'], '전출 예정일 미입력', 'check', '날짜를 입력하세요');
+    var when = grade + '학년 ' + sem + '학기(' + date + ')';
+    if (r === 'bully' || r === 'harm') return add(it, ['J24da1'], when, 'ok', '동일 계열 전학은 시기 제한 없음');
+    if (r === 'career') return add(it, ['J24ga', 'J37'], when + ', 타 계열(일반고→특성화고)', grade === 1 ? (pd(date).getMonth() === 7 ? 'ok' : 'check') : 'bad', grade === 1 ? '2학년 1학기 시작 전까지. 진로변경 전입학은 연 1회 8월 시행(6월 공문) → 일정 확인' : '타 계열 전학은 2학년 1학기 시작 전까지만');
+    if (grade === 3 && sem === 2) return add(it, ['J24ga'], when, 'bad', '동일 계열 전학은 전입교 3학년 2학기 시작 전까지만 가능');
+    return add(it, ['J24ga'], when + ', 동일 계열(일반고)', 'ok', '3학년 2학기 시작 전');
+  })();
+
+  (function () {
+    var it = '④ 출석일수(수업일수 2/3)';
+    var need = needDays(cal), rem = f.remOverride !== '' && f.remOverride != null ? +f.remOverride : (date ? remainingDays(cal, date) : null);
+    if (rem == null) return add(it, ['J24da2'], '기준 학사일정 밖 날짜', 'check', '전입교 남은 수업일수를 직접 입력하세요');
+    if (f.attended === '' || f.attended == null) return add(it, ['J24da2'], '웅천고 출석일수 미입력(전입교 남은 수업일수 약 ' + rem + '일)', 'check', '웅천고 출석일수 + 전입교 남은 수업일수 ≥ 전입교 수업일수의 2/3');
+    var tot = +f.attended + rem;
+    return add(it, ['J24da2'], '웅천고 ' + f.attended + '일 + 전입교 남은 약 ' + rem + '일 = ' + tot + '일 (기준 ' + need + '일)', tot >= need ? 'ok' : 'bad', tot >= need ? '2/3 충족(전입교 학사일정으로 최종 확인)' : '2/3 미달 → 원칙적 당해 학년도 전학 불가', tot >= need ? null : { id: 'out4-learn', label: '전입교가 학습권 보호 차원에서 허가(당해 학년 수료 불가 안내·확인)', rules: ['J42'] });
+  })();
+
+  add('⑤ 전입교 결원·교육과정', ['J23', 'J24da2'], '전입교 판단', 'step', isPy && r === 'general' ? '평준화 학군은 도교육청이 허용 범위 안에서 배정' : '전입교의 정원 외 5%·총합 10%·정원 내 결원과 교육과정 차이(미이수 과목) 확인', { id: 'out5-done', label: '전입교 결원·허가(배정) 확인', rules: ['J23'] });
+  add('⑥ 돌아올 때 주의', ['J35sa', 'R6'], '3개월 규정', 'info', '전학 후 3개월 안에 직전 학군으로 다시 이사하면 원적교 환원. 웅천고로 다시 오려면 거주·재학 각 90일 이상(규정 제6조④)');
+
+  var cands = candidateSchools(f);
+  cands.forEach(function (c) { c.seat = seatInfo(c, f.grade); });
+  cands.sort(function (a, b) { var ab = (a.st === 'bad') - (b.st === 'bad'); if (ab) return ab; var va = a.seat && a.seat.vac != null ? a.seat.vac : -999, vb = b.seat && b.seat.vac != null ? b.seat.vac : -999; return vb - va; });
+  var docs = r === 'career' ? ['전입학 배정원서', '주민등록등본', '학교장 추천서(웅천고)', '자기소개서', '성적증명서', '학교생활기록부', 'NEIS 성적 일람표', '특성화고 가산점 증명서(해당자)']
+    : r === 'env' ? ['서식1-4 배정원서', '주민등록등본', '서식2 개인정보 동의서', '서식4 학교장 의견서(웅천고)', '서식5 담임 의견서', '서식3 학부모 사유서', '사유별 증빙']
+    : isPy ? ['고등학교 전입학 배정원서(평준화지역, 서식1-1, 희망 5개교)', '주민등록등본', '개인정보 동의서(서식2)', '부·모 미이전 시 추가서류(지침 9쪽)']
+    : ['전입 희망 학교의 전입학 신청서(서식1-3 예시)', '주민등록등본', '개인정보 동의서(서식2)', '부·모 미이전 시 추가서류(지침 9쪽)'];
+  var steps = r === 'career' ? ['웅천고 학교장 추천', '희망 특성화고 진로변경 전형 신청(8월)', '전형위원회 심의·학교장 허가', '전입교 → 웅천고 전출 동의 요청 공문', '나이스 전출 처리']
+    : isPy && r === 'general' ? ['거주지 이전', '배정원서를 도교육청 중등교육과에 방문·팩스 접수', '희망 5개교 중 추첨 배정(학교 공문·보호자 문자)', '배정일로부터 7일 안에 전입학 수속', '웅천고 나이스 전출 처리']
+    : (r === 'bully' || r === 'harm' || r === 'env') ? ['웅천고 → 도교육청 공문(배정 요청)', '도교육청 심의·배정', '전출교·전입교 공문 → 학교간 처리']
+    : ['거주지 이전', '전입 희망 학교에 결원 확인 후 신청', '전입교 심의·학교장 허가', '전입교 → 웅천고 전출 동의 요청 공문', '웅천고 나이스 전출 처리'];
+  return summarize(rows, docs, steps, { cands: cands }, '웅천고 쪽 결격 없음 → 전입교 허가(평준화는 도교육청 배정) 절차 진행');
+}
+
+/* ===== 파일 내보내기: 무압축 zip + HWPX(OWPML) + XLSX (외부 라이브러리 없음) ===== */
+var ZIP = (function () {
+  var T = null;
+  function crc32(u8) {
+    if (!T) { T = new Uint32Array(256); for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; T[n] = c >>> 0; } }
+    var crc = 0xFFFFFFFF; for (var i = 0; i < u8.length; i++) crc = T[(crc ^ u8[i]) & 0xFF] ^ (crc >>> 8);
+    return (crc ^ 0xFFFFFFFF) >>> 0;
+  }
+  function utf8(s) { return new TextEncoder().encode(s); }
+  function store(files) {
+    var parts = [], central = [], offset = 0;
+    function u16(v) { return [v & 255, (v >>> 8) & 255]; }
+    function u32(v) { return [v & 255, (v >>> 8) & 255, (v >>> 16) & 255, (v >>> 24) & 255]; }
+    files.forEach(function (f) {
+      var name = utf8(f.name), data = typeof f.data === 'string' ? utf8(f.data) : f.data, crc = crc32(data);
+      var head = [].concat([0x50, 0x4b, 0x03, 0x04], u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0));
+      parts.push(new Uint8Array(head), name, data);
+      var cen = [].concat([0x50, 0x4b, 0x01, 0x02], u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0x21), u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset));
+      central.push(new Uint8Array(cen), name);
+      offset += head.length + name.length + data.length;
+    });
+    var cenSize = central.reduce(function (a, b) { return a + b.length; }, 0);
+    var end = new Uint8Array([].concat([0x50, 0x4b, 0x05, 0x06], u16(0), u16(0), u16(files.length), u16(files.length), u32(cenSize), u32(offset), u16(0)));
+    var all = parts.concat(central, [end]), total = all.reduce(function (a, b) { return a + b.length; }, 0);
+    var out = new Uint8Array(total), p = 0; all.forEach(function (b) { out.set(b, p); p += b.length; });
+    return out;
+  }
+  return { store: store, utf8: utf8 };
+})();
+function xesc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, ''); }
+var XH = '<' + '?xml version="1.0" encoding="UTF-8" standalone="yes" ?' + '>';
+
+/* ---------- HWPX ---------- */
+var HWPX = (function () {
+  var NS = 'xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hp10="http://www.hancom.co.kr/hwpml/2016/paragraph" xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:hhs="http://www.hancom.co.kr/hwpml/2011/history" xmlns:hm="http://www.hancom.co.kr/hwpml/2011/master-page" xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf/" xmlns:ooxmlchart="http://www.hancom.co.kr/hwpml/2016/ooxmlchart" xmlns:hwpunitchar="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0"';
+  var FILLS = { 4: '#E6E6E6', 5: '#FFD5D5', 6: '#D8F0D8', 7: '#FFF0C2', 8: '#DCEBFF', 9: '#F2F2F2' };
+  var CPS = [[1000, 0, 0], [1600, 1, 1], [850, 1, 0], [850, 1, 1], [1000, 1, 0], [800, 1, 0], [1300, 1, 1], [1050, 1, 1]]; // [height, font, bold]
+  function header() {
+    var langs = ['HANGUL', 'LATIN', 'HANJA', 'JAPANESE', 'OTHER', 'SYMBOL', 'USER'];
+    var fonts = langs.map(function (l) {
+      return '<hh:fontface lang="' + l + '" fontCnt="2"><hh:font id="0" face="함초롬바탕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font><hh:font id="1" face="함초롬돋움" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="6" proportion="4" contrast="0" strokeVariation="1" armStyle="1" letterform="1" midline="1" xHeight="1"/></hh:font></hh:fontface>';
+    }).join('');
+    function bf(id, border, fill) {
+      var b = border ? 'SOLID' : 'NONE', w = border ? '0.12 mm' : '0.1 mm';
+      return '<hh:borderFill id="' + id + '" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" Crooked="0" isCounter="0"/><hh:backSlash type="NONE" Crooked="0" isCounter="0"/>' +
+        ['left', 'right', 'top', 'bottom'].map(function (s) { return '<hh:' + s + 'Border type="' + b + '" width="' + w + '" color="#000000"/>'; }).join('') +
+        '<hh:diagonal type="SOLID" width="0.1 mm" color="#000000"/>' + (fill ? '<hc:fillBrush><hc:winBrush faceColor="' + fill + '" hatchColor="#999999" alpha="0"/></hc:fillBrush>' : '') + '</hh:borderFill>';
+    }
+    var seven = function (v) { return 'hangul="' + v + '" latin="' + v + '" hanja="' + v + '" japanese="' + v + '" other="' + v + '" symbol="' + v + '" user="' + v + '"'; };
+    function cp(id, h, font, bold) {
+      return '<hh:charPr id="' + id + '" height="' + h + '" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="2"><hh:fontRef ' + seven(font) + '/><hh:ratio ' + seven(100) + '/><hh:spacing ' + seven(0) + '/><hh:relSz ' + seven(100) + '/><hh:offset ' + seven(0) + '/>' + (bold ? '<hh:bold/>' : '') + '<hh:underline type="NONE" shape="SOLID" color="#000000"/><hh:strikeout shape="NONE" color="#000000"/><hh:outline type="NONE"/><hh:shadow type="NONE" color="#B2B2B2" offsetX="10" offsetY="10"/></hh:charPr>';
+    }
+    function pp(id, align, line, prev, next) {
+      var m = '<hh:margin><hc:intent value="0" unit="HWPUNIT"/><hc:left value="0" unit="HWPUNIT"/><hc:right value="0" unit="HWPUNIT"/><hc:prev value="' + (prev || 0) + '" unit="HWPUNIT"/><hc:next value="' + (next || 0) + '" unit="HWPUNIT"/></hh:margin><hh:lineSpacing type="PERCENT" value="' + line + '" unit="HWPUNIT"/>';
+      return '<hh:paraPr id="' + id + '" tabPrIDRef="0" condense="0" fontLineHeight="0" snapToGrid="1" suppressLineNumbers="0" checked="0"><hh:align horizontal="' + align + '" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:breakSetting breakLatinWord="KEEP_WORD" breakNonLatinWord="BREAK_WORD" widowOrphan="0" keepWithNext="0" keepLines="0" pageBreakBefore="0" lineWrap="BREAK"/><hh:autoSpacing eAsianEng="0" eAsianNum="0"/><hp:switch><hp:case hp:required-namespace="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar">' + m + '</hp:case><hp:default>' + m + '</hp:default></hp:switch><hh:border borderFillIDRef="2" offsetLeft="0" offsetRight="0" offsetTop="0" offsetBottom="0" connect="0" ignoreMargin="0"/></hh:paraPr>';
+    }
+    var bfs = bf(1, false) + bf(2, false) + bf(3, true); for (var i = 4; i <= 9; i++) bfs += bf(i, true, FILLS[i]);
+    return XH + '<hh:head ' + NS + ' version="1.4" secCnt="1"><hh:beginNum page="1" footnote="1" endnote="1" pic="1" tbl="1" equation="1"/><hh:refList>' +
+      '<hh:fontfaces itemCnt="7">' + fonts + '</hh:fontfaces><hh:borderFills itemCnt="9">' + bfs + '</hh:borderFills>' +
+      '<hh:charProperties itemCnt="' + CPS.length + '">' + CPS.map(function (c, i) { return cp(i, c[0], c[1], c[2]); }).join('') + '</hh:charProperties>' +
+      '<hh:tabProperties itemCnt="1"><hh:tabPr id="0" autoTabLeft="0" autoTabRight="0"/></hh:tabProperties>' +
+      '<hh:paraProperties itemCnt="7">' + pp(0, 'JUSTIFY', 150) + pp(1, 'CENTER', 130, 0, 250) + pp(2, 'CENTER', 115) + pp(3, 'RIGHT', 130) + pp(4, 'LEFT', 135) + pp(5, 'LEFT', 135, 340, 80) + pp(6, 'LEFT', 115) + '</hh:paraProperties>' +
+      '<hh:styles itemCnt="1"><hh:style id="0" type="PARA" name="바탕글" engName="Normal" paraPrIDRef="0" charPrIDRef="0" nextStyleIDRef="0" langID="1042" lockForm="0"/></hh:styles>' +
+      '</hh:refList><hh:compatibleDocument targetProgram="HWP201X"><hh:layoutCompatibility/></hh:compatibleDocument><hh:docOption><hh:linkinfo path="" pageInherit="0" footnoteInherit="0"/></hh:docOption><hh:trackchageConfig flags="56"/></hh:head>';
+  }
+  var PAGE = { w: 59528, h: 84186, l: 3402, r: 3402, t: 2268, b: 2268, hd: 850, ft: 850 };
+  var USABLE = PAGE.w - PAGE.l - PAGE.r;
+  function secPr() {
+    return '<hp:secPr id="" textDirection="HORIZONTAL" spaceColumns="1134" tabStop="8000" tabStopVal="4000" tabStopUnit="HWPUNIT" outlineShapeIDRef="0" memoShapeIDRef="0" textVerticalWidthHead="0" masterPageCnt="0"><hp:grid lineGrid="0" charGrid="0" wonggojiFormat="0"/><hp:startNum pageStartsOn="BOTH" page="0" pic="0" tbl="0" equation="0"/><hp:visibility hideFirstHeader="0" hideFirstFooter="0" hideFirstMasterPage="0" border="SHOW_ALL" fill="SHOW_ALL" hideFirstPageNum="0" hideFirstEmptyLine="0" showLineNumber="0"/><hp:lineNumberShape restartType="0" countBy="0" distance="0" startNumber="0"/>' +
+      '<hp:pagePr landscape="WIDELY" width="' + PAGE.w + '" height="' + PAGE.h + '" gutterType="LEFT_ONLY"><hp:margin header="' + PAGE.hd + '" footer="' + PAGE.ft + '" gutter="0" left="' + PAGE.l + '" right="' + PAGE.r + '" top="' + PAGE.t + '" bottom="' + PAGE.b + '"/></hp:pagePr>' +
+      '<hp:footNotePr><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar=")" supscript="0"/><hp:noteLine length="-1" type="SOLID" width="0.12 mm" color="#000000"/><hp:noteSpacing betweenNotes="283" belowLine="567" aboveLine="850"/><hp:numbering type="CONTINUOUS" newNum="1"/><hp:placement place="EACH_COLUMN" beneathText="0"/></hp:footNotePr>' +
+      '<hp:endNotePr><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar=")" supscript="0"/><hp:noteLine length="14692344" type="SOLID" width="0.12 mm" color="#000000"/><hp:noteSpacing betweenNotes="0" belowLine="567" aboveLine="850"/><hp:numbering type="CONTINUOUS" newNum="1"/><hp:placement place="END_OF_DOCUMENT" beneathText="0"/></hp:endNotePr>' +
+      ['BOTH', 'EVEN', 'ODD'].map(function (t) { return '<hp:pageBorderFill type="' + t + '" borderFillIDRef="1" textBorder="PAPER" headerInside="0" footerInside="0" fillArea="PAPER"><hp:offset left="1417" right="1417" top="1417" bottom="1417"/></hp:pageBorderFill>'; }).join('') +
+      '</hp:secPr><hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="1" sameSz="1" sameGap="0"/></hp:ctrl>';
+  }
+  var pid, oid, BINS;
+  function pic(binId, pw, ph, cw, ch) {
+    var ow = pw * 75, oh = ph * 75, sx = (cw / ow).toFixed(6), sy = (ch / oh).toFixed(6);
+    return '<hp:pic id="' + (oid++) + '" zOrder="' + oid + '" numberingType="PICTURE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" href="" groupLevel="0" instid="' + (oid + 50000) + '" reverse="0">' +
+      '<hp:offset x="0" y="0"/><hp:orgSz width="' + ow + '" height="' + oh + '"/><hp:curSz width="' + cw + '" height="' + ch + '"/><hp:flip horizontal="0" vertical="0"/>' +
+      '<hp:rotationInfo angle="0" centerX="' + Math.round(cw / 2) + '" centerY="' + Math.round(ch / 2) + '" rotateimage="1"/>' +
+      '<hp:renderingInfo><hc:transMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/><hc:scaMatrix e1="' + sx + '" e2="0" e3="0" e4="0" e5="' + sy + '" e6="0"/><hc:rotMatrix e1="1" e2="0" e3="0" e4="0" e5="1" e6="0"/></hp:renderingInfo>' +
+      '<hp:imgRect><hc:pt0 x="0" y="0"/><hc:pt1 x="' + ow + '" y="0"/><hc:pt2 x="' + ow + '" y="' + oh + '"/><hc:pt3 x="0" y="' + oh + '"/></hp:imgRect>' +
+      '<hp:imgClip left="0" right="' + ow + '" top="0" bottom="' + oh + '"/><hp:inMargin left="0" right="0" top="0" bottom="0"/><hp:imgDim dimwidth="' + ow + '" dimheight="' + oh + '"/>' +
+      '<hc:img binaryItemIDRef="' + binId + '" bright="0" contrast="0" effect="REAL_PIC" alpha="0"/><hp:effects/>' +
+      '<hp:sz width="' + cw + '" widthRelTo="ABSOLUTE" height="' + ch + '" heightRelTo="ABSOLUTE" protect="0"/>' +
+      '<hp:pos treatAsChar="1" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="PARA" vertAlign="TOP" horzAlign="CENTER" vertOffset="0" horzOffset="0"/>' +
+      '<hp:outMargin left="0" right="0" top="0" bottom="0"/></hp:pic>';
+  }
+  function pngSize(u8) { return { w: (u8[16] << 24 | u8[17] << 16 | u8[18] << 8 | u8[19]) >>> 0, h: (u8[20] << 24 | u8[21] << 16 | u8[22] << 8 | u8[23]) >>> 0 }; }
+  function para(pPr, cPr, text, pre) {
+    return '<hp:p id="' + (pid++) + '" paraPrIDRef="' + pPr + '" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="' + cPr + '">' + (pre || '') + (text ? '<hp:t>' + xesc(text) + '</hp:t>' : '') + '</hp:run></hp:p>';
+  }
+  function linesFor(text, w, cpH) {
+    var cpl = Math.max(4, Math.floor((w - 420) / (cpH * 1.0)));
+    return String(text == null ? '' : text).split('\n').reduce(function (a, s) {
+      var len = 0; for (var i = 0; i < s.length; i++) len += s.charCodeAt(i) > 255 ? 1 : 0.55;
+      return a + Math.max(1, Math.ceil(len / cpl));
+    }, 0);
+  }
+  function table(t) {
+    var cols = t.cols, sum = cols.reduce(function (a, b) { return a + b; }, 0);
+    cols = cols.map(function (c) { return Math.round(c / sum * USABLE); });
+    var W = cols.reduce(function (a, b) { return a + b; }, 0);
+    var heights = t.rows.map(function (r) {
+      var mx = 0; r.forEach(function (c, ci) { var cw = cols.slice(ci, ci + (c.span || 1)).reduce(function (a, b) { return a + b; }, 0), ch = CPS[c.cp != null ? c.cp : 2][0]; mx = Math.max(mx, linesFor(c.v, cw, ch) * ch * 1.3); });
+      return Math.round(Math.max(mx, 1020) + 560);
+    });
+    var H = heights.reduce(function (a, b) { return a + b; }, 0);
+    var x = '<hp:tbl id="' + (oid++) + '" zOrder="0" numberingType="TABLE" textWrap="TOP_AND_BOTTOM" textFlow="BOTH_SIDES" lock="0" dropcapstyle="None" pageBreak="' + (t.noSplit ? 'NONE' : 'CELL') + '" repeatHeader="1" rowCnt="' + t.rows.length + '" colCnt="' + cols.length + '" cellSpacing="0" borderFillIDRef="3" noAdjust="0">' +
+      '<hp:sz width="' + W + '" widthRelTo="ABSOLUTE" height="' + H + '" heightRelTo="ABSOLUTE" protect="0"/><hp:pos treatAsChar="0" affectLSpacing="0" flowWithText="1" allowOverlap="0" holdAnchorAndSO="0" vertRelTo="PARA" horzRelTo="PARA" vertAlign="TOP" horzAlign="LEFT" vertOffset="0" horzOffset="0"/>' +
+      '<hp:outMargin left="0" right="0" top="0" bottom="0"/><hp:inMargin left="141" right="141" top="57" bottom="57"/>';
+    t.rows.forEach(function (r, ri) {
+      var ci = 0;
+      x += '<hp:tr>' + r.map(function (c) {
+        var span = c.span || 1, cw = cols.slice(ci, ci + span).reduce(function (a, b) { return a + b; }, 0), col = ci; ci += span;
+        var ps = String(c.v == null ? '' : c.v).split('\n').map(function (s) { return para(c.al === 'L' ? 6 : 2, c.cp != null ? c.cp : 2, s); }).join('');
+        return '<hp:tc name="" header="' + (ri < (t.head || 0) ? 1 : 0) + '" hasMargin="0" protect="0" editable="0" dirty="0" borderFillIDRef="' + (c.bf || 3) + '"><hp:subList id="" textDirection="HORIZONTAL" lineWrap="BREAK" vertAlign="CENTER" linkListIDRef="0" linkListNextIDRef="0" textWidth="0" textHeight="0" hasTextRef="0" hasNumRef="0">' + ps +
+          '</hp:subList><hp:cellAddr colAddr="' + col + '" rowAddr="' + ri + '"/><hp:cellSpan colSpan="' + span + '" rowSpan="1"/><hp:cellSz width="' + cw + '" height="' + heights[ri] + '"/><hp:cellMargin left="141" right="141" top="57" bottom="57"/></hp:tc>';
+      }).join('') + '</hp:tr>';
+    });
+    return x + '</hp:tbl>';
+  }
+  function build(doc) {
+    pid = 1; oid = 1000; BINS = [];
+    var body = '', first = true;
+    doc.blocks.forEach(function (b) {
+      var pre = first ? secPr() : ''; first = false;
+      if (b.type === 'title') body += para(1, 1, b.text, pre);
+      else if (b.type === 'h') body += para(5, 7, b.text, pre);
+      else if (b.type === 'p') body += para(b.pp != null ? b.pp : 4, b.cp != null ? b.cp : 4, b.text, pre);
+      else if (b.type === 'img') {
+        var sz = pngSize(b.bytes), id = 'image' + (BINS.length + 1); BINS.push({ id: id, bytes: b.bytes });
+        var maxW = Math.round(USABLE * (b.frac || 1)), cw = Math.min(maxW, sz.w * 75 * (b.scale || 0.62)), ch = Math.round(cw * sz.h / sz.w);
+        if (b.maxH && ch > b.maxH) { ch = b.maxH; cw = Math.round(ch * sz.w / sz.h); }
+        body += '<hp:p id="' + (pid++) + '" paraPrIDRef="2" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="2">' + pre + pic(id, sz.w, sz.h, Math.round(cw), ch) + '</hp:run></hp:p>';
+        if (b.cap) body += para(2, 5, b.cap);
+      }
+      else if (b.type === 'pb') body += '<hp:p id="' + (pid++) + '" paraPrIDRef="4" styleIDRef="0" pageBreak="1" columnBreak="0" merged="0"><hp:run charPrIDRef="4"/></hp:p>';
+      else if (b.type === 'table') body += '<hp:p id="' + (pid++) + '" paraPrIDRef="4" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="2">' + pre + table(b) + '</hp:run></hp:p>';
+    });
+    var section = XH + '<hs:sec ' + NS + '>' + body + '</hs:sec>';
+    var now = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
+    var hpf = XH + '<opf:package ' + NS + ' version="" unique-identifier="" id=""><opf:metadata><opf:title>' + xesc(doc.title) + '</opf:title><opf:language>ko</opf:language><opf:meta name="creator" content="text">웅천고등학교</opf:meta><opf:meta name="subject" content="text"/><opf:meta name="description" content="text"/><opf:meta name="lastsaveby" content="text">전출입 판정</opf:meta><opf:meta name="CreatedDate" content="text">' + now + '</opf:meta><opf:meta name="ModifiedDate" content="text">' + now + '</opf:meta><opf:meta name="keyword" content="text"/></opf:metadata>' +
+      '<opf:manifest><opf:item id="header" href="Contents/header.xml" media-type="application/xml"/>' + BINS.map(function (b) { return '<opf:item id="' + b.id + '" href="BinData/' + b.id + '.png" media-type="image/png" isEmbeded="1"/>'; }).join('') + '<opf:item id="section0" href="Contents/section0.xml" media-type="application/xml"/><opf:item id="settings" href="settings.xml" media-type="application/xml"/></opf:manifest><opf:spine><opf:itemref idref="header" linear="yes"/><opf:itemref idref="section0" linear="yes"/></opf:spine></opf:package>';
+    var files = [
+      { name: 'mimetype', data: 'application/hwp+zip' },
+      { name: 'version.xml', data: XH + '<hv:HCFVersion xmlns:hv="http://www.hancom.co.kr/hwpml/2011/version" tagetApplication="WORDPROCESSOR" major="5" minor="1" micro="0" buildNumber="1" os="1" xmlVersion="1.4" application="Hancom Office Hangul" appVersion="11, 0, 0, 0 WIN32LEWindows_10"/>' },
+      { name: 'Contents/header.xml', data: header() },
+      { name: 'Contents/section0.xml', data: section },
+      { name: 'settings.xml', data: XH + '<ha:HWPApplicationSetting xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0"><ha:CaretPosition listIDRef="0" paraIDRef="0" pos="0"/></ha:HWPApplicationSetting>' },
+      { name: 'META-INF/container.xml', data: XH + '<ocf:container xmlns:ocf="urn:oasis:names:tc:opendocument:xmlns:container" xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf"><ocf:rootfiles><ocf:rootfile full-path="Contents/content.hpf" media-type="application/hwpml-package+xml"/></ocf:rootfiles></ocf:container>' },
+      { name: 'META-INF/manifest.xml', data: XH + '<odf:manifest xmlns:odf="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"/>' },
+      { name: 'Contents/content.hpf', data: hpf }
+    ];
+    BINS.forEach(function (b) { files.push({ name: 'BinData/' + b.id + '.png', data: b.bytes }); });
+    return ZIP.store(files);
+  }
+  return { build: build };
+})();
+
+/* ---------- XLSX ---------- */
+var XLSX = (function () {
+  function colName(i) { var s = ''; i++; while (i > 0) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+  var STYLES = XH + '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+    '<fonts count="3"><font><sz val="10"/><name val="맑은 고딕"/><family val="2"/></font><font><b/><sz val="10"/><name val="맑은 고딕"/><family val="2"/></font><font><b/><sz val="14"/><name val="맑은 고딕"/><family val="2"/></font></fonts>' +
+    '<fills count="8"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' +
+    ['FFE6E6E6', 'FFFFD5D5', 'FFD8F0D8', 'FFFFF0C2', 'FFDCEBFF', 'FFF2F2F2'].map(function (c) { return '<fill><patternFill patternType="solid"><fgColor rgb="' + c + '"/><bgColor indexed="64"/></patternFill></fill>'; }).join('') + '</fills>' +
+    '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/></border></borders>' +
+    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="9">' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+    '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +
+    '<xf numFmtId="0" fontId="0" fillId="0" borderId="1" xfId="0" applyBorder="1" applyAlignment="1"><alignment vertical="top" wrapText="1"/></xf>' +
+    [3, 4, 5].map(function (f) { return '<xf numFmtId="0" fontId="1" fillId="' + f + '" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>'; }).join('') +
+    '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+    '<xf numFmtId="0" fontId="1" fillId="6" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +
+    '<xf numFmtId="0" fontId="0" fillId="7" borderId="1" xfId="0" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>' +
+    '</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+  function sheetXml(sh) {
+    var cols = (sh.cols || []).map(function (w, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join('');
+    var rows = sh.rows.map(function (r, ri) {
+      return '<row r="' + (ri + 1) + '">' + r.map(function (c, ci) {
+        if (c == null) return '';
+        var v = c, s = 0; if (typeof c === 'object') { v = c.v; s = c.s || 0; }
+        var ref = colName(ci) + (ri + 1);
+        if (typeof v === 'number' && isFinite(v)) return '<c r="' + ref + '" s="' + s + '"><v>' + v + '</v></c>';
+        return '<c r="' + ref + '" s="' + s + '" t="inlineStr"><is><t xml:space="preserve">' + xesc(v) + '</t></is></c>';
+      }).join('') + '</row>';
+    }).join('');
+    return XH + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' + (sh.freeze ? '<sheetViews><sheetView workbookViewId="0"><pane ySplit="' + sh.freeze + '" topLeftCell="A' + (sh.freeze + 1) + '" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' : '') + (cols ? '<cols>' + cols + '</cols>' : '') + '<sheetData>' + rows + '</sheetData></worksheet>';
+  }
+  function build(sheets) {
+    var files = [
+      { name: '[Content_Types].xml', data: XH + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' + sheets.map(function (s, i) { return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; }).join('') + '</Types>' },
+      { name: '_rels/.rels', data: XH + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>' },
+      { name: 'xl/workbook.xml', data: XH + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>' + sheets.map(function (s, i) { return '<sheet name="' + xesc(s.name.replace(/[\[\]\*\?\/\\:]/g, ' ').slice(0, 31)) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>'; }).join('') + '</sheets></workbook>' },
+      { name: 'xl/_rels/workbook.xml.rels', data: XH + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' + sheets.map(function (s, i) { return '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>'; }).join('') + '<Relationship Id="rId' + (sheets.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>' },
+      { name: 'xl/styles.xml', data: STYLES }
+    ];
+    sheets.forEach(function (s, i) { files.push({ name: 'xl/worksheets/sheet' + (i + 1) + '.xml', data: sheetXml(s) }); });
+    return ZIP.store(files);
+  }
+  return { build: build };
+})();
+var ST_XLS = { ok: 4, bad: 3, review: 5, check: 5, info: 7, na: 8, step: 7 };
+var ST_HWP = { ok: 6, bad: 5, review: 7, check: 7, info: 8, na: 9, step: 8 };
+function download(bytes, name, mime) {
+  var blob = new Blob([bytes], { type: mime }), a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+
+/* ===== 화면 ===== */
+var LS_KEY = 'wc-transfer-base-v2';
+var Q, CAL;
+function loadBase() {
+  try { var s = JSON.parse(localStorage.getItem(LS_KEY) || 'null'); if (s && s.Q && s.CAL) { Q = s.Q; CAL = s.CAL; return; } } catch (e) { }
+  Q = JSON.parse(JSON.stringify(QUOTA_DEFAULT)); CAL = JSON.parse(JSON.stringify(CAL_DEFAULT));
+}
+function saveBase() { localStorage.setItem(LS_KEY, JSON.stringify({ Q: Q, CAL: CAL })); }
+function $(s, r) { return (r || document).querySelector(s); }
+function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+function h(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function today() { return fmt(new Date()); }
+var YN = [['n', '아니오'], ['y', '예']];
+
+var FIELDS_IN = [
+  { k: 'name', l: '학생 성명(출력용·저장 안 됨)', t: 'text', ph: '비워 두어도 됨' },
+  { k: 'grade', l: '전입할 학년', t: 'sel', o: [['1', '1학년'], ['2', '2학년'], ['3', '3학년']], d: '2' },
+  { k: 'gender', l: '성별', t: 'sel', o: [['남', '남'], ['여', '여']] },
+  { k: 'date', l: '전입 예정일', t: 'date' },
+  { k: 'reason', l: '전입 사유', t: 'sel', o: REASONS_IN },
+  { k: 'envSub', l: '교육환경 전환 세부', t: 'sel', o: [['violence', '가정폭력·아동학대·성폭력 피해'], ['bullied', '학교폭력 피해'], ['ill', '희귀·난치 등 중증질환'], ['maladj', '학교생활 부적응 위기'], ['staff', '교직원 자녀(부모와 같은 학교)']], s: function (f) { return f.reason === 'env'; } },
+  { k: 'selfResolved', l: '학교장 자체해결로 끝난 사안인가', t: 'sel', o: YN, s: function (f) { return f.reason === 'env' && f.envSub === 'bullied'; } },
+  { k: 'after3m', l: '입학 후 3개월 지났고 상담 5회 이상인가', t: 'sel', o: [['y', '예'], ['n', '아니오']], s: function (f) { return f.reason === 'env' && f.envSub === 'maladj'; } },
+  { k: 'origRegion', l: '원적교(지금 학교) 위치', t: 'sel', o: ORIG_REGION, d: 'other' },
+  { k: 'origType', l: '원적교 유형', t: 'sel', o: ORIG_TYPE },
+  { k: 'origSem', l: '원적교에서 마친 학기 수', t: 'num', ph: '예: 1', s: function (f) { return f.residence === 'always' || f.reason === 'general'; } },
+  { k: 'gnMiddle', l: '경남 소재 중학교 졸업', t: 'sel', o: [['y', '예'], ['n', '아니오']], s: function (f) { return f.origType === 'special' || f.origType === 'national'; } },
+  { k: 'fromSportsHS', l: '경남체육고 재학생인가', t: 'sel', o: YN, s: function (f) { return f.reason === 'athlete'; } },
+  { k: 'residence', l: '전 가족 거주지', t: 'sel', o: RESIDENCE },
+  { k: 'addr', l: '거주지 주소(입력 후 「거리 계산」)', t: 'addr' },
+  { k: 'dong', l: '거주 행정동(주소 대신 선택 가능)', t: 'sel', o: [['', '선택']].concat(DONGS.map(function (d) { return [d[0], d[0] + (d[3] ? ' (' + d[3] + ')' : '')]; })) },
+  { k: 'kmMe', l: '웅천고까지 거리 km(직접 입력 시 우선)', t: 'num', ph: '선택' },
+  { k: 'kmOther', l: '가장 가까운 다른 학교 거리 km', t: 'num', ph: '선택', s: function (f) { return !!f.kmMe; } },
+  { k: 'milBase', l: '보호자 소속(발령) 부대가 진해 주둔인가', t: 'sel', o: [['y', '예'], ['n', '아니오']], s: function (f) { return f.reason === 'military'; } },
+  { k: 'retGap', l: '외국 학교 마지막 재학일~신청일(일)', t: 'num', s: function (f) { return f.reason === 'returnee'; } },
+  { k: 'retAbroad6', l: '외국 정규학교 6개월 이상 이수', t: 'sel', o: [['y', '예'], ['n', '아니오']], s: function (f) { return f.reason === 'returnee'; } },
+  { k: 'retSpecial', l: '부모 동반 2년 이상 거주·2년 이상 재학(학칙 특례)', t: 'sel', o: YN, s: function (f) { return f.reason === 'returnee'; } },
+  { k: 'cAbs', l: '미인정 결석(일)', t: 'num', s: function (f) { return f.reason === 'career'; } },
+  { k: 'cLate', l: '미인정 지각·조퇴·결과 합(회)', t: 'num', s: function (f) { return f.reason === 'career'; } },
+  { k: 'cDisc', l: '사회봉사 이상 징계·학폭/교권 사안', t: 'sel', o: YN, s: function (f) { return f.reason === 'career'; } },
+  { k: 'gdExp', l: '학교 외 학습경험(학기)', t: 'num', s: function (f) { return f.reason === 'gradeDecide'; } },
+  { k: 'victim10', l: '피해학생 재학교와 10km 이상 떨어짐', t: 'sel', o: [['y', '예'], ['n', '아니오']], s: function (f) { return f.reason === 'bully'; } },
+  { k: 'attended', l: '원적교 당해 학년 출석일수(일)', t: 'num', ph: '나이스 출결 기준' },
+  { k: 'remOverride', l: '웅천고 남은 수업일수(직접 입력 시 우선)', t: 'num', ph: '자동 계산' },
+  { k: 'courses', l: '미이수 과목(편성표 대조)', t: 'sel', o: [['unknown', '아직 대조 안 함'], ['none', '미이수 과목 없음'], ['some', '미이수 과목 있음']] },
+  { k: 'missing', l: '미이수 예상 과목', t: 'text', ph: '예: 통합과학2, 한국사2', s: function (f) { return f.courses === 'some'; } },
+  { k: 'reTrans', l: '웅천고에서 전출했다가 다시 오는 경우', t: 'sel', o: YN },
+  { k: 'reRes', l: '신청일 기준 거주기간(일)', t: 'num', s: function (f) { return f.reTrans === 'y'; } },
+  { k: 'reEnr', l: '신청일 기준 현재 학교 재학기간(일)', t: 'num', s: function (f) { return f.reTrans === 'y'; } },
+  { k: 'fake', l: '최근 6개월 안 위장전입 판명', t: 'sel', o: YN }
+];
+var FIELDS_OUT = [
+  { k: 'name', l: '학생 성명(출력용·저장 안 됨)', t: 'text', ph: '비워 두어도 됨' },
+  { k: 'grade', l: '현재 학년', t: 'sel', o: [['1', '1학년'], ['2', '2학년'], ['3', '3학년']], d: '1' },
+  { k: 'gender', l: '성별', t: 'sel', o: [['남', '남'], ['여', '여']] },
+  { k: 'date', l: '전출 예정일', t: 'date' },
+  { k: 'reason', l: '전학 사유', t: 'sel', o: REASONS_OUT },
+  { k: 'newRegion', l: '새 거주지(전 가족)', t: 'sel', o: NEW_REGION, d: 'p1' },
+  { k: 'residence', l: '거주지 상태', t: 'sel', o: [['moved', '전 가족이 새 거주지로 이전(단독세대)'], ['partial', '부 또는 모 불가피 미이전 + 추가서류'], ['always', '원래 그 지역 거주(웅천고는 이사 없이 입학)'], ['cohabit', '동거인 등재·학생만 이전'], ['none', '이전 없음(진해 거주 그대로)']], s: function (f) { return f.reason === 'general'; } },
+  { k: 'wcSem', l: '웅천고에서 마친 학기 수', t: 'num', ph: '예: 1', s: function (f) { return f.reason === 'general'; } },
+  { k: 'cAbs', l: '미인정 결석(일)', t: 'num', s: function (f) { return f.reason === 'career'; } },
+  { k: 'cLate', l: '미인정 지각·조퇴·결과 합(회)', t: 'num', s: function (f) { return f.reason === 'career'; } },
+  { k: 'cDisc', l: '사회봉사 이상 징계·학폭/교권 사안', t: 'sel', o: YN, s: function (f) { return f.reason === 'career'; } },
+  { k: 'attended', l: '웅천고 당해 학년 출석일수(일)', t: 'num', ph: '나이스 출결 기준' },
+  { k: 'remOverride', l: '전입교 남은 수업일수(직접 입력 시 우선)', t: 'num', ph: '웅천고 일정으로 추정' }
+];
+
+function buildForm(el, fields, onch) {
+  el.innerHTML = fields.map(function (x) {
+    var inp;
+    if (x.t === 'sel') inp = '<select name="' + x.k + '">' + x.o.map(function (o) { return '<option value="' + h(o[0]) + '"' + (x.d === o[0] ? ' selected' : '') + '>' + h(o[1]) + '</option>'; }).join('') + '</select>';
+    else if (x.t === 'date') inp = '<input type="date" name="' + x.k + '" value="' + today() + '">';
+    else if (x.t === 'addr') inp = '<div class="addrbox"><input type="text" name="addr" placeholder="예: 창원시 진해구 웅천중로 71" autocomplete="off"><button type="button" class="btn sm" data-act="geo">거리 계산</button></div><div class="geo-msg muted"></div><ul class="geo-cands"></ul><div class="geomap" id="geoMap" hidden></div>';
+    else if (x.t === 'num') inp = '<input type="number" min="0" step="any" inputmode="decimal" name="' + x.k + '" placeholder="' + h(x.ph || '') + '">';
+    else inp = '<input type="text" name="' + x.k + '" placeholder="' + h(x.ph || '') + '" autocomplete="off">';
+    var tag = x.t === 'addr' ? 'div' : 'label';
+    return '<' + tag + ' class="fld" data-k="' + x.k + '"><span>' + h(x.l) + '</span>' + inp + '</' + tag + '>';
+  }).join('');
+  el.addEventListener('input', onch);
+  el.addEventListener('change', function (e) { if (e.target.tagName === 'SELECT' && e.target.dataset.v !== e.target.value) { e.target.dataset.v = e.target.value; onch(); } });
+}
+function readForm(el, fields) {
+  var f = {}; fields.forEach(function (x) { var i = el.querySelector('[name="' + x.k + '"]'); f[x.k] = i ? i.value.trim() : ''; });
+  fields.forEach(function (x) { var lab = el.querySelector('[data-k="' + x.k + '"]'); var vis = !x.s || x.s(f); lab.style.display = vis ? '' : 'none'; if (!vis) f[x.k] = (x.t === 'sel' ? (x.d || x.o[0][0]) : ''); });
+  return f;
+}
+function lbl(list, v) { var o = list.filter(function (x) { return x[0] === v; })[0]; return o ? o[1] : v; }
+
+function exBox(x) {
+  if (!x.exAvail && !x.exApplied) return '';
+  return '<label class="exb' + (x.exApplied ? ' on' : '') + '"><input type="checkbox" data-ex="' + h(x.ex.id) + '"' + (x.exApplied ? ' checked' : '') + '> ' + (x.exApplied ? (x.exKind === '확인' ? '확인 완료' : '예외 인정') + ' 적용 중(해제하려면 체크 해제)' : (x.exKind === '확인' ? '확인 완료: ' : '예외 인정: ') + h(x.ex.label)) + '</label>';
+}
+function ruleChips(ids) { return ids.map(function (id) { var r = RULES[id]; return r ? '<button type="button" class="rc" data-rule="' + id + '" title="' + h(r.t) + '">' + h(shortRule(id)) + '</button>' : ''; }).join(' '); }
+function shortRule(id) {
+  var m = { J23: '지침Ⅱ-3', J24ga: '지침Ⅱ-4-가', J24da1: '지침Ⅱ-4-다-1)', J24da2: '지침Ⅱ-4-다-2)', J31ga: '지침Ⅲ-1-가', J31na: '지침Ⅲ-1-나', J31etc: '지침Ⅲ-1-다~차', J32: '지침Ⅲ-2', J34: '지침Ⅲ-4', J35na: '지침Ⅲ-5-나', J35da: '지침Ⅲ-5-다', J35sa: '지침Ⅲ-5-사', J36na: '지침Ⅲ-6-나', J37: '지침Ⅲ-7', J5: '지침Ⅴ', J6: '지침Ⅵ', W22: '학칙§22', W23: '학칙§23', R2: '규정§2·4', R5: '규정§5', R6: '규정§6', R7: '규정§7', J42: '지침Ⅳ-2-가-3)' };
+  return m[id] || id;
+}
+function ruleText(ids) { return ids.map(shortRule).join(', '); }
+
+/* 판정에 인용된 규정을 심각도 순으로 모음 */
+function citedRules(res) {
+  var rank = { bad: 0, review: 1, check: 1, step: 2, ok: 3, info: 4, na: 5 }, m = {}, order = [];
+  res.rows.forEach(function (x) {
+    var st = x.exApplied ? 'ok' : x.st;
+    x.rules.forEach(function (id) {
+      if (!RULES[id]) return;
+      if (!m[id]) { m[id] = { id: id, worst: st, items: [] }; order.push(id); }
+      if (rank[st] < rank[m[id].worst]) m[id].worst = st;
+      m[id].items.push(x);
+    });
+  });
+  return order.map(function (id) { return m[id]; }).sort(function (a, b) { return rank[a.worst] - rank[b.worst]; });
+}
+var RTAG = { bad: ['위배 근거', 'bad'], review: ['심의·확인 근거', 'review'], check: ['심의·확인 근거', 'review'], step: ['절차 근거', 'info'], ok: ['참고', 'ok'], info: ['참고', 'info'], na: ['참고', 'na'] };
+function itemShort(x) { return x.item.replace(/^([①-⑩])\s*/, '$1 ').split('(')[0].trim(); }
+function rulesSection(kind, res) {
+  var cr = citedRules(res), op = STATE[kind].open || {};
+  return '<div class="rulesec" id="rs-' + kind + '"><div class="rs-head"><b>근거 지침·학칙·규정 원문</b><span class="rs-sub">위배·심의 항목의 근거부터 보여 줍니다.</span>' +
+    '<span class="rs-btns"><button type="button" class="btn ghost sm" data-act="open-all">모두 펼치기</button><button type="button" class="btn ghost sm" data-act="close-all">모두 접기</button>' +
+    '<label class="rs-print"><input type="checkbox" class="rs-pr" ' + (STATE[kind].noRulesPrint ? '' : 'checked') + '> 인쇄·한글에 포함</label></span></div>' +
+    cr.map(function (c) {
+      var r = RULES[c.id], tg = RTAG[c.worst] || RTAG.info, isOpen = op[c.id] != null ? op[c.id] : c.worst === 'bad';
+      return '<details class="rd w-' + tg[1] + '" data-rid="' + c.id + '"' + (isOpen ? ' open' : '') + '><summary><span class="tag ' + tg[1] + '">' + tg[0] + '</span><b>' + h(r.t) + '</b> <span class="muted">(' + h(r.p) + ')</span><span class="rel">관련: ' + c.items.map(function (x) { return h(itemShort(x)) + '<i class="s-' + (x.exApplied ? 'ok' : x.st) + '">' + stLabel(x) + '</i>'; }).join(', ') + '</span></summary>' +
+        '<div class="rd-body">' + c.items.filter(function (x) { return x.st === 'bad' || x.st === 'review' || x.st === 'check' || x.exApplied; }).map(function (x) { return '<div class="rd-why"><b>' + h(itemShort(x)) + '</b>: ' + h(x.why) + '</div>'; }).join('') +
+        '<pre>' + h(r.x) + '</pre></div></details>';
+    }).join('') + '</div>';
+}
+function renderSheet(kind, f, res) {
+  var isIn = kind === 'in', v = res.verdict;
+  var info = isIn ? [
+    ['학생', f.name || '(미기재)', '학년·성별', f.grade + '학년 · ' + f.gender],
+    ['전입 예정일', f.date || '-', '전입 사유', lbl(REASONS_IN, f.reason)],
+    ['원적교', lbl(ORIG_REGION, f.origRegion).replace(/\(.*\)/, ''), '원적교 유형', lbl(ORIG_TYPE, f.origType)],
+    ['거주지', lbl(RESIDENCE, f.residence), '거리 기준', f.kmMe ? '거리 직접 입력' : (f.geo ? f.addr : (f.dong ? f.dong + '(행정동)' : '-'))]
+  ] : [
+    ['학생', f.name || '(미기재)', '학년·성별', f.grade + '학년 · ' + f.gender],
+    ['전출 예정일', f.date || '-', '전학 사유', lbl(REASONS_OUT, f.reason)],
+    ['새 거주지', lbl(NEW_REGION, f.newRegion), '거주지 상태', f.reason === 'general' ? lbl(FIELDS_OUT[6].o, f.residence) : '-']
+  ];
+  var hd = '<div class="sh-head"><h2>웅천고등학교 ' + (isIn ? '전입학' : '전출(전학)') + ' 가능 여부 검토서</h2><div class="sh-meta">작성일 ' + today() + ' · 근거: 2026학년도 경남 고교 전·편입학 업무 시행 지침, 웅천고 규정집(2026.7.20.) · 정원 기준 ' + h(Q.baseDate) + '</div></div>';
+  var tb = '<table class="kv">' + info.map(function (r) { return '<tr><th>' + h(r[0]) + '</th><td>' + h(r[1]) + '</td><th>' + h(r[2]) + '</th><td>' + h(r[3]) + '</td></tr>'; }).join('') + '</table>';
+  var vd = '<div class="verdict ' + v.c + '"><b>판정: ' + v.t + '</b><span>' + h(v.s) + '</span></div>';
+  var badBox = res.bad.length ? '<div class="badbox"><b>불가 사유(위배 항목)</b><ol>' + res.bad.map(function (x) { return '<li><b>' + h(x.item.replace(/^[①-⑩]\s*/, '')) + '</b> — ' + h(x.why) + ' <span class="cite">[' + h(ruleText(x.rules)) + ']</span> <button type="button" class="golink" data-goto="' + x.rules[0] + '">원문 보기 ↓</button></li>'; }).join('') + '</ol></div>' : '';
+  var pend = !res.bad.length && res.pending.length ? '<div class="pendbox"><b>남은 확인·심의 사항</b><ol>' + res.pending.map(function (x) { return '<li><b>' + h(x.item.replace(/^[①-⑩]\s*/, '')) + '</b> — ' + h(x.why) + ' <button type="button" class="golink" data-goto="' + x.rules[0] + '">원문 보기 ↓</button></li>'; }).join('') + '</ol></div>' : '';
+  var exl = res.exList && res.exList.length ? '<div class="exbox"><b>예외 인정·확인 완료 항목(' + res.exList.length + ')</b><ol>' + res.exList.map(function (x) { return '<li><b>' + h(x.item.replace(/^[①-⑩]\s*/, '')) + '</b> [' + x.exKind + ']: ' + h(x.ex.label) + ' <span class="cite">[' + h(ruleText(x.ex.rules.length ? x.ex.rules : x.rules)) + ']</span></li>'; }).join('') + '</ol></div>' : '';
+  var ck = '<table class="ck"><thead><tr><th style="width:17%">검토 항목</th><th style="width:9%">판정</th><th style="width:30%">확인 내용</th><th>판단 이유</th><th style="width:13%">근거 규정</th></tr></thead><tbody>' +
+    res.rows.map(function (x) { return '<tr class="r-' + x.st + (x.exApplied ? ' exd' : '') + '"><td>' + h(x.item) + '</td><td class="st ' + x.st + '">' + stLabel(x) + '</td><td>' + h(x.v) + '</td><td>' + h(x.why) + exBox(x) + '</td><td>' + ruleChips(x.rules) + '</td></tr>'; }).join('') + '</tbody></table>';
+  var cand = '';
+  if (!isIn && res.extra) {
+    var cs = res.extra.cands;
+    var okc = cs.filter(function (c) { return c.st !== 'bad'; });
+    cand = '<div class="cand"><div class="cand-h"><span class="gne-stamp">' + h(gneStamp()) + '</span><button type="button" class="btn ghost sm" data-act="gne-refresh">모집정원·현원 새로고침</button></div><b>갈 수 있는 학교(' + okc.length + '곳' + (cs.length > okc.length ? ', 불가 ' + (cs.length - okc.length) + '곳 포함 표시' : '') + ')</b>' +
+      (cs.length ? '<table class="ct"><thead><tr><th>학교</th><th>지역·유형</th><th>성별</th><th>모집정원</th><th>' + f.grade + '학년 현원(공시)</th><th>자리(추정)</th><th>전학 방법</th></tr></thead><tbody>' + cs.map(function (c) { var se = c.seat, sx = seatText(se); return '<tr class="' + (c.st === 'bad' ? 'x' : '') + '"><td>' + h(c.n.replace('고등학교', '고')) + '</td><td>' + h(c.r + ' · ' + c.t) + '</td><td>' + h(c.g) + '</td><td>' + (c.q || '-') + '</td><td>' + (se ? se.cnt + '명 / ' + se.cls + '학급' : '-') + '</td><td class="seat ' + sx.c + '" title="' + (se && se.per ? '학급당 ' + se.per + '명(모집정원÷학급수) × ' + se.cls + '학급 = ' + se.cap + '명 기준' : '') + '">' + h(sx.t) + '</td><td>' + h(c.how) + '</td></tr>'; }).join('') + '</tbody></table><p class="muted">※ 자리(추정) = 해당 학년 학급수 × 학급당 정원(모집정원÷학급수) − 공시 현원. 4월 1일 이후 전출입은 반영되지 않으니 최종 결원은 해당 학교에 확인하세요.</p>' : '<p class="muted">' + (f.newRegion === 'other' ? '타 시·도: 해당 시·도교육청 지침에 따름' : f.newRegion === 'abroad' ? '해외 출국: 전학 대상 학교 없음' : '조건에 맞는 학교가 없습니다') + '</p>') + '</div>';
+  }
+  var docs = '<div class="two"><div><b>필요 서류</b><ul>' + res.docs.map(function (d) { return '<li>' + h(d) + '</li>'; }).join('') + '</ul></div><div><b>절차</b><ol>' + res.steps.map(function (d) { return '<li>' + h(d) + '</li>'; }).join('') + '</ol></div></div>';
+  var foot = '<div class="sh-foot">※ 이 검토서는 지침·학칙에 따른 사전 점검용이며 최종 허가는 전·편입학심의위원회 심의와 학교장 결정(도교육청 배정 사안은 교육청 결정)에 따릅니다. 거리는 행정복지센터 기준 직선거리(참고), 남은 수업일수는 2026학년도 학사일정 기준 추정입니다.</div>';
+  return hd + tb + vd + badBox + pend + exl + ck + cand + docs + rulesSection(kind, res) + foot;
+}
+
+/* ---------- 내보내기 ---------- */
+function infoRows(kind, f) {
+  return kind === 'in' ? [['학생', f.name || '(미기재)'], ['학년·성별', f.grade + '학년 · ' + f.gender], ['전입 예정일', f.date], ['전입 사유', lbl(REASONS_IN, f.reason)], ['원적교 위치', lbl(ORIG_REGION, f.origRegion)], ['원적교 유형', lbl(ORIG_TYPE, f.origType)], ['거주지', lbl(RESIDENCE, f.residence)], ['거리 기준', f.kmMe ? '거리 직접 입력' : (f.geo ? f.addr : (f.dong || '-'))], ['원적교 출석일수', f.attended || '-']]
+    : [['학생', f.name || '(미기재)'], ['학년·성별', f.grade + '학년 · ' + f.gender], ['전출 예정일', f.date], ['전학 사유', lbl(REASONS_OUT, f.reason)], ['새 거주지', lbl(NEW_REGION, f.newRegion)], ['웅천고 출석일수', f.attended || '-']];
+}
+function exportHwpx(kind) {
+  var st = STATE[kind], f = st.f, res = st.res, isIn = kind === 'in';
+  var blocks = [{ type: 'title', text: '웅천고등학교 ' + (isIn ? '전입학' : '전출(전학)') + ' 가능 여부 검토서' },
+    { type: 'p', pp: 3, cp: 5, text: '작성일 ' + today() + ' · 근거: 2026학년도 경남 고교 전·편입학 업무 시행 지침, 웅천고 규정집(2026.7.20.)' }];
+  var ir = infoRows(kind, f), kv = [];
+  for (var i = 0; i < ir.length; i += 2) { var a = ir[i], b = ir[i + 1] || ['', '']; kv.push([{ v: a[0], bf: 4, cp: 3 }, { v: a[1], al: 'L' }, { v: b[0], bf: 4, cp: 3 }, { v: b[1], al: 'L' }]); }
+  blocks.push({ type: 'table', cols: [14, 36, 14, 36], rows: kv });
+  blocks.push({ type: 'table', cols: [100], rows: [[{ v: '판정: ' + res.verdict.t + '  (' + res.verdict.s + ')', bf: ST_HWP[res.verdict.c], cp: 6 }]] });
+  if (res.bad.length) {
+    blocks.push({ type: 'h', text: '■ 불가 사유(위배 항목)' });
+    res.bad.forEach(function (x, k) { blocks.push({ type: 'p', cp: 2, pp: 4, text: (k + 1) + '. ' + x.item.replace(/^[①-⑩]\s*/, '') + ' — ' + x.why + ' [' + ruleText(x.rules) + ']' }); });
+  } else if (res.pending.length) {
+    blocks.push({ type: 'h', text: '■ 남은 확인·심의 사항' });
+    res.pending.forEach(function (x, k) { blocks.push({ type: 'p', cp: 2, pp: 4, text: (k + 1) + '. ' + x.item.replace(/^[①-⑩]\s*/, '') + ' — ' + x.why }); });
+  }
+  if (res.exList.length) {
+    blocks.push({ type: 'h', text: '■ 예외 인정·확인 완료 항목' });
+    res.exList.forEach(function (x, k) { blocks.push({ type: 'p', cp: 2, pp: 4, text: (k + 1) + '. ' + x.item.replace(/^[①-⑩]\s*/, '') + ' [' + x.exKind + '] ' + x.ex.label + ' [' + ruleText(x.ex.rules.length ? x.ex.rules : x.rules) + ']' }); });
+  }
+  blocks.push({ type: 'h', text: '■ 항목별 검토' });
+  var rows = [[{ v: '검토 항목', bf: 4, cp: 3 }, { v: '판정', bf: 4, cp: 3 }, { v: '확인 내용', bf: 4, cp: 3 }, { v: '판단 이유', bf: 4, cp: 3 }, { v: '근거', bf: 4, cp: 3 }]];
+  res.rows.forEach(function (x) { rows.push([{ v: x.item, al: 'L' }, { v: stLabel(x), bf: ST_HWP[x.st], cp: 3 }, { v: x.v, al: 'L' }, { v: x.exApplied ? '[' + x.exKind + ' 적용, 위 목록 참고] 원래 판단: ' + x.orig.why : x.why, al: 'L' }, { v: ruleText(x.rules), al: 'L', cp: 5 }]); });
+  blocks.push({ type: 'table', cols: [17, 8, 27, 34, 14], rows: rows, head: 1 });
+  if (!isIn && res.extra && res.extra.cands.length) {
+    blocks.push({ type: 'h', text: '■ 갈 수 있는 학교' });
+    var cr = [[{ v: '학교', bf: 4, cp: 3 }, { v: '지역·유형', bf: 4, cp: 3 }, { v: '성별', bf: 4, cp: 3 }, { v: f.grade + '학년 현원', bf: 4, cp: 3 }, { v: '자리(추정)', bf: 4, cp: 3 }, { v: '전학 방법', bf: 4, cp: 3 }]];
+    res.extra.cands.forEach(function (c) { var se = c.seat, sx = seatText(se); cr.push([{ v: c.n.replace('고등학교', '고') + (c.st === 'bad' ? '(불가)' : ''), al: 'L' }, { v: c.r + ' · ' + c.t, al: 'L' }, { v: c.g }, { v: se ? se.cnt + '명/' + se.cls + '학급' : '-' }, { v: sx.t, bf: sx.c === 'ok' ? 6 : (sx.c === 'review' ? 7 : 3) }, { v: c.how, al: 'L' }]); });
+    blocks.push({ type: 'table', cols: [15, 22, 6, 13, 14, 30], rows: cr, head: 1 });
+    blocks.push({ type: 'p', cp: 5, text: gneStamp() + '. 자리(추정) = 학급수 × 학급당 정원(모집정원÷학급수) − 공시 현원.' });
+  }
+  blocks.push({ type: 'h', text: '■ 필요 서류' });
+  blocks.push({ type: 'p', cp: 2, text: res.docs.join(' / ') });
+  blocks.push({ type: 'h', text: '■ 절차' });
+  blocks.push({ type: 'p', cp: 2, text: res.steps.map(function (s, k) { return (k + 1) + ') ' + s; }).join('  →  ') });
+  if (!st.noRulesPrint) {
+    blocks.push({ type: 'h', text: '■ 근거 지침·학칙·규정 원문' });
+    citedRules(res).forEach(function (c) {
+      var r = RULES[c.id], tg = RTAG[c.worst] || RTAG.info;
+      var rows2 = [[{ v: '[' + tg[0] + '] ' + r.t + ' (' + r.p + ')  관련: ' + c.items.map(function (x) { return itemShort(x) + '(' + stLabel(x) + ')'; }).join(', '), bf: tg[1] === 'bad' ? 5 : (tg[1] === 'review' ? 7 : 4), cp: 3, al: 'L' }], [{ v: r.x, al: 'L', cp: 2 }]];
+      blocks.push({ type: 'table', cols: [100], rows: rows2, noSplit: true });
+    });
+  }
+  blocks.push({ type: 'p', cp: 5, text: '※ 사전 점검용. 최종 허가는 위원회 심의·학교장 결정(배정 사안은 교육청). 거리는 직선거리, 남은 수업일수는 학사일정 기준 추정.' });
+  download(HWPX.build({ title: '전출입 검토서', blocks: blocks }), '웅천고_' + (isIn ? '전입' : '전출') + '_검토서_' + (f.name || '학생') + '_' + today() + '.hwpx', 'application/hwp+zip');
+}
+function exportResultXlsx(kind) {
+  var st = STATE[kind], f = st.f, res = st.res, isIn = kind === 'in';
+  var rows = [[{ v: '웅천고등학교 ' + (isIn ? '전입학' : '전출(전학)') + ' 가능 여부 검토서', s: 6 }], ['작성일 ' + today() + ' · 근거: 2026 경남 전·편입학 지침, 웅천고 규정집(2026.7.20.)'], []];
+  infoRows(kind, f).forEach(function (r) { rows.push([{ v: r[0], s: 1 }, { v: r[1], s: 2 }]); });
+  rows.push([]); rows.push([{ v: '판정', s: 1 }, { v: res.verdict.t + ' (' + res.verdict.s + ')', s: ST_XLS[res.verdict.c] }]); rows.push([]);
+  rows.push(['검토 항목', '판정', '확인 내용', '판단 이유', '근거 규정'].map(function (x) { return { v: x, s: 1 }; }));
+  res.rows.forEach(function (x) { rows.push([{ v: x.item, s: 2 }, { v: stLabel(x), s: ST_XLS[x.st] }, { v: x.v, s: 2 }, { v: x.why, s: 2 }, { v: x.rules.map(function (id) { return RULES[id].t; }).join('\n'), s: 2 }]); });
+  rows.push([]); rows.push([{ v: '필요 서류', s: 1 }, { v: res.docs.join('\n'), s: 2 }]); rows.push([{ v: '절차', s: 1 }, { v: res.steps.map(function (s, k) { return (k + 1) + ') ' + s; }).join('\n'), s: 2 }]);
+  var sheets = [{ name: '검토서', cols: [24, 12, 40, 55, 34], rows: rows }];
+  if (!isIn && res.extra) sheets.push({ name: '갈 수 있는 학교', cols: [24, 10, 26, 7, 10, 12, 9, 12, 20, 44], freeze: 2, rows: [[{ v: gneStamp(), s: 1 }], ['학교', '지역', '유형', '성별', '모집정원', f.grade + '학년 현원', '학급수', '학급당 정원', '자리(추정)', '전학 방법'].map(function (x) { return { v: x, s: 1 }; })].concat(res.extra.cands.map(function (c) { var se = c.seat, sx = seatText(se); return [{ v: c.n + (c.st === 'bad' ? '(불가)' : ''), s: 2 }, { v: c.r, s: 2 }, { v: c.t, s: 2 }, { v: c.g, s: 2 }, { v: c.q || '', s: 2 }, { v: se ? se.cnt : '', s: 2 }, { v: se ? se.cls : '', s: 2 }, { v: se && se.per ? se.per : '', s: 2 }, { v: sx.t, s: ST_XLS[sx.c] || 2 }, { v: c.how, s: 2 }]; })) });
+  var used = {}; res.rows.forEach(function (x) { x.rules.forEach(function (id) { used[id] = 1; }); });
+  sheets.push({ name: '근거 규정 원문', cols: [14, 34, 12, 30, 110], rows: [['구분', '조항', '출처', '관련 항목', '원문'].map(function (x) { return { v: x, s: 1 }; })].concat(citedRules(res).map(function (c) { var r = RULES[c.id], tg = RTAG[c.worst] || RTAG.info; return [{ v: tg[0], s: ST_XLS[c.worst] }, { v: r.t, s: 2 }, { v: r.p, s: 2 }, { v: c.items.map(function (x) { return itemShort(x) + '(' + stLabel(x) + ')'; }).join('\n'), s: 2 }, { v: r.x, s: 2 }]; })) });
+  download(XLSX.build(sheets), '웅천고_' + (isIn ? '전입' : '전출') + '_검토결과_' + (f.name || '학생') + '_' + today() + '.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+}
+function exportBaseXlsx() {
+  var S = [];
+  var qr = [['학년', '입학정원', '정원 내 재적', '정원 내 결원'].concat(OUT_CATS.map(function (c) { return c.n + (c.pct ? '(' + c.pct + '%)' : ''); })).concat(['정원 외 총합(10% 대상)', '총합 상한(10%)']).map(function (x) { return { v: x, s: 1 }; })];
+  [1, 2, 3].forEach(function (g) { var q = Q.g[g], t = 0; OUT_CATS.forEach(function (c) { if (c.in10) t += +q.out[c.k] || 0; }); qr.push([g + '학년', +q.ent, +q.inside, q.ent - q.inside].concat(OUT_CATS.map(function (c) { return (+q.out[c.k] || 0) + (c.pct ? ' / ' + Math.floor(q.ent * c.pct / 100) : ''); })).concat([t, Math.floor(q.ent * 0.1)])); });
+  qr.push([]); qr.push(['기준: ' + Q.baseDate + '. 2026 공시 재적 1학년 212·2학년 200·3학년 213명(특수학급 6명 별도). 정원 내·외 구분은 추정이므로 나이스로 확인 후 웹에서 수정.']);
+  S.push({ name: '정원·현원', cols: [8, 10, 12, 12, 16, 16, 16, 14, 14, 14, 14, 22, 16, 14], rows: qr });
+  var cum = 0, cr = [['주 시작(월)', '수업일수', '누계', '학기'].map(function (x) { return { v: x, s: 1 }; })];
+  weekTable(CAL).forEach(function (w) { cum += +w[1]; cr.push([w[0], +w[1], cum, pd(w[0]) >= pd(CAL.sem2) ? '2학기' : '1학기']); });
+  cr.push([]); cr.push([{ v: '학기 기간', s: 1 }, CAL.periods.map(function (p) { return p[0] + '~' + p[1]; }).join(', ')]); cr.push([{ v: '평일 휴업일', s: 1 }, CAL.holidays.join(', ')]);
+  cr.push([]); cr.push(['연간 수업일수 ' + calTotal(CAL) + '일, 2/3 기준 ' + needDays(CAL) + '일. 1학기 시작 ' + CAL.sem1 + ', 2학기 시작 ' + CAL.sem2 + '. ' + CAL.note]);
+  S.push({ name: '학사일정(2026)', cols: [14, 10, 8, 8], rows: cr });
+  var keys = ['1-1', '1-2', '2-1', '2-2', '3-1', '3-2'];
+  var cu = [['교과', '과목', '유형'].concat(keys.map(function (k) { return k.replace('-', '학년 ') + '학기'; })).map(function (x) { return { v: x, s: 1 }; })];
+  CURR_FIXED.forEach(function (c) { cu.push([c[0], c[1], c[2]].concat(keys.map(function (k) { return c[3][k] || ''; }))); });
+  cu.push(['학교 지정 합계', '', ''].concat(keys.map(function (k) { return CURR_TOTAL[k][0]; })));
+  cu.push(['학생 선택 합계', '', ''].concat(keys.map(function (k) { return CURR_TOTAL[k][1]; })));
+  cu.push(['창의적 체험활동', '', ''].concat(keys.map(function (k) { return CURR_TOTAL[k][2]; })));
+  S.push({ name: '편성표_학교지정(2026)', cols: [10, 18, 8, 10, 10, 10, 10, 10, 10], rows: cu });
+  S.push({ name: '편성표_선택군(2026)', cols: [10, 12, 18, 100], rows: [['학년-학기', '선택군', '이수', '과목'].map(function (x) { return { v: x, s: 1 }; })].concat(CURR_SEL.map(function (r) { return r.slice(); })) });
+  var jr = [['학교', '성별', '주소', '모집정원', '비고'].map(function (x) { return { v: x, s: 1 }; })].concat(JINHAE.map(function (s) { return [s.n, s.g, s.addr, s.q, s.from ? s.from + ' 개교' : '']; }));
+  jr.push([]); jr.push([{ v: '행정동 \\ 학교(직선거리 km)', s: 1 }].concat(JINHAE.map(function (s) { return { v: s.s, s: 1 }; })));
+  DONGS.forEach(function (d) { jr.push([d[0] + (d[3] === '근사' ? '(근사)' : '')].concat(JINHAE.map(function (s) { return Math.round(hav(d[1], d[2], s.lat, s.lng) * 10) / 10; }))); });
+  S.push({ name: '진해 고교·거리', cols: [22, 8, 34, 12, 14, 12, 12], rows: jr });
+  S.push({ name: '경남 고교(정원·현원)', cols: [22, 8, 26, 8, 8, 10, 9, 12, 12, 12, 9, 16], freeze: 2, rows: [[{ v: gneStamp(), s: 1 }], ['학교', '지역', '유형', '모집', '성별', '모집정원', '모집학급', '1학년 현원(학급)', '2학년 현원(학급)', '3학년 현원(학급)', '특수학급', '전화'].map(function (x) { return { v: x, s: 1 }; })].concat(GNE.map(function (s) { var si = s.si || {}; var gc = function (i) { return si.cnt ? si.cnt[i] + '(' + si.cls[i] + ')' : ''; }; return [s.n, s.r, s.t, s.rec, s.g, s.q || '', s.c || '', gc(0), gc(1), gc(2), si.sp != null ? si.sp : '', s.tel]; })) });
+  S.push({ name: '규정 원문', cols: [36, 14, 120], rows: [['조항', '출처', '원문'].map(function (x) { return { v: x, s: 1 }; })].concat(Object.keys(RULES).map(function (id) { var r = RULES[id]; return [{ v: r.t, s: 2 }, { v: r.p, s: 2 }, { v: r.x, s: 2 }]; })) });
+  S.push({ name: '출처', cols: [80, 50], rows: [['자료', '출처'].map(function (x) { return { v: x, s: 1 }; })].concat(META.sources) });
+  download(XLSX.build(S), '웅천고_전출입_기초자료_' + today() + '.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+}
+
+/* ---------- 기초자료 탭 ---------- */
+function renderData(which) {
+  var el = $('#dataBody'), html = ''; el.oninput = null; el.onchange = null;
+  if (which === 'quota') {
+    html = '<p class="note">학적 담당이 나이스 기준으로 숫자를 고치면 이 브라우저에 저장되어 판정에 바로 반영됩니다. 기본값은 2026 공시 재적(1학년 212·2학년 200·3학년 213명)으로 만든 <b>추정</b>입니다.</p>' +
+      (function () { var w = GNE.filter(function (x) { return x.n === '웅천고등학교'; })[0]; return w && w.si ? '<p class="note">참고: 학교알리미 ' + (GNE_META.siYear || '') + ' 공시 웅천고 재적 1학년 ' + w.si.cnt[0] + '명(' + w.si.cls[0] + '학급), 2학년 ' + w.si.cnt[1] + '명(' + w.si.cls[1] + '학급), 3학년 ' + w.si.cnt[2] + '명(' + w.si.cls[2] + '학급), 특수학급 ' + w.si.sp + '명. 정원 내·외 구분은 나이스로 확인하세요.</p>' : ''; })() + '<label class="fld inline"><span>기준일·비고</span><input id="qBase" value="' + h(Q.baseDate) + '"></label>' +
+      '<div class="scroll"><table class="dt edit"><thead><tr><th>구분</th><th>1학년</th><th>2학년</th><th>3학년</th></tr></thead><tbody>' +
+      '<tr><th>입학정원</th>' + [1, 2, 3].map(function (g) { return '<td><input type="number" data-q="' + g + '.ent" value="' + Q.g[g].ent + '"></td>'; }).join('') + '</tr>' +
+      '<tr><th>정원 내 재적</th>' + [1, 2, 3].map(function (g) { return '<td><input type="number" data-q="' + g + '.inside" value="' + Q.g[g].inside + '"></td>'; }).join('') + '</tr>' +
+      OUT_CATS.map(function (c) { return '<tr><th>정원 외: ' + h(c.n) + (c.pct ? ' <small>(' + c.pct + '%)</small>' : '') + '</th>' + [1, 2, 3].map(function (g) { return '<td><input type="number" data-q="' + g + '.out.' + c.k + '" value="' + (Q.g[g].out[c.k] || 0) + '"></td>'; }).join('') + '</tr>'; }).join('') +
+      '</tbody></table></div><div id="qSum"></div><button type="button" class="btn ghost" id="qReset">공시 기준 기본값으로 되돌리기</button>';
+  } else if (which === 'cal') {
+    var cum = 0;
+    html = '<p class="note">2026학년도 학사일정(학교알리미 공시) 기준. 수업일수 <b>' + calTotal(CAL) + '일</b>, 2/3 기준 <b>' + needDays(CAL) + '일</b>. ' + h(CAL.note) + '</p>' +
+      '<div class="row3"><label class="fld"><span>1학기 시작일</span><input type="date" data-c="sem1" value="' + CAL.sem1 + '"></label><label class="fld"><span>2학기 시작일</span><input type="date" data-c="sem2" value="' + CAL.sem2 + '"></label><label class="fld"><span>2027학년도 2학기 시작(추정)</span><input type="date" data-c="nextSem2" value="' + CAL.nextSem2 + '"></label></div>' +
+      '<label class="fld"><span>수업 기간(한 줄에 하나, 시작~끝)</span><textarea data-c="periods" rows="3" style="width:100%;max-width:420px">' + CAL.periods.map(function (p) { return p[0] + '~' + p[1]; }).join('\n') + '</textarea></label>' +
+      '<label class="fld"><span>평일 휴업일(공휴일·대체공휴일·재량휴업일 등, 쉼표로 구분)</span><textarea data-c="holidays" rows="3" style="width:100%">' + CAL.holidays.join(', ') + '</textarea></label>' +
+      '<div class="scroll"><table class="dt"><thead><tr><th>주 시작(월)</th><th>수업일수</th><th>누계</th></tr></thead><tbody>' +
+      weekTable(CAL).map(function (w) { cum += w[1]; return '<tr><td>' + w[0] + '</td><td class="c">' + w[1] + '</td><td class="c">' + cum + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+      '<button type="button" class="btn ghost" id="cReset">공시 학사일정으로 되돌리기</button>';  } else if (which === 'curr') {
+    var keys = ['1-1', '1-2', '2-1', '2-2', '3-1', '3-2'];
+    html = '<p class="note">2026학년도 당해연도 전 학년 교육과정 편성표 중 학교 지정 과목(운영 학점). 3학년은 2024 입학생(2015 개정), 1·2학년은 2022 개정. 개설 여부 등 세부는 공시 원본 확인.</p><div class="scroll"><table class="dt"><thead><tr><th>교과</th><th>과목</th><th>유형</th>' + keys.map(function (k) { return '<th>' + k + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      CURR_FIXED.map(function (c) { return '<tr><td>' + c[0] + '</td><td>' + c[1] + '</td><td>' + c[2] + '</td>' + keys.map(function (k) { return '<td class="c">' + (c[3][k] || '') + '</td>'; }).join('') + '</tr>'; }).join('') +
+      '<tr class="sum"><td colspan="3">학교 지정 / 학생 선택 / 창체</td>' + keys.map(function (k) { return '<td class="c">' + CURR_TOTAL[k].join('/') + '</td>'; }).join('') + '</tr></tbody></table></div>' +
+      '<h4>학생 선택 과목</h4><div class="scroll"><table class="dt"><thead><tr><th>학년-학기</th><th>선택군</th><th>이수</th><th>과목</th></tr></thead><tbody>' + CURR_SEL.map(function (r) { return '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td><td>' + r[2] + '</td><td>' + r[3] + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  } else if (which === 'jinhae') {
+    html = '<p class="note">진해구 일반고는 모두 비평준화(학교장 전형). 거리는 행정복지센터 기준 직선거리(참고). 진해신항고는 2027.3.1. 개교 예정(위치는 진해신항중 옆 근사).</p><div class="gne-bar"><span class="gne-stamp">' + h(gneStamp()) + '</span><button type="button" class="btn sm" data-act="gne-refresh">모집정원·현원 새로고침</button></div><div class="scroll"><table class="dt"><thead><tr><th>학교</th><th>성별</th><th>주소</th><th>모집정원</th></tr></thead><tbody>' +
+      JINHAE.map(function (s) { return '<tr><td>' + s.n + '</td><td>' + s.g + '</td><td>' + h(s.addr) + '</td><td>' + s.q + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+      '<h4>학년별 현원과 자리(추정)</h4><div class="scroll"><table class="dt"><thead><tr><th>학교</th><th>1학년</th><th>2학년</th><th>3학년</th></tr></thead><tbody>' + JINHAE.map(function (j) { var s = GNE.filter(function (x) { return x.n === j.n; })[0]; return '<tr><td>' + j.s + '</td>' + [1, 2, 3].map(function (g) { var se = seatInfo(s, g), sx = seatText(se); return '<td>' + (se ? se.cnt + '명/' + se.cls + '학급 · <span class="seat ' + sx.c + '">' + h(sx.t) + '</span>' : '공시 자료 없음') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div><p class="muted">자리(추정) = 학급수 × 학급당 정원(모집정원÷학급수) − 공시 현원. 웅천고는 정원·현원 탭의 나이스 값이 판정에 쓰입니다.</p>' +
+      '<h4>행정동별 직선거리(km)</h4><div class="scroll"><table class="dt"><thead><tr><th>행정동</th>' + JINHAE.map(function (s) { return '<th>' + s.s + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      DONGS.map(function (d) { var ds = JINHAE.map(function (s) { return hav(d[1], d[2], s.lat, s.lng); }), mn = Math.min.apply(null, ds); return '<tr><td>' + d[0] + (d[3] === '근사' ? '*' : '') + '</td>' + ds.map(function (x, i) { return '<td class="c' + (x === mn ? ' best' : '') + (JINHAE[i].me ? ' me' : '') + '">' + x.toFixed(1) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div><p class="muted">* 근사 좌표. 진하게 표시 = 가장 가까운 학교(성별 제한 반영 전).</p>';
+  } else if (which === 'gne') {
+    html = '<div class="gne-bar"><span class="gne-stamp">' + h(gneStamp()) + '</span><button type="button" class="btn sm" data-act="gne-refresh">모집정원·현원 새로고침</button></div><div class="row3"><label class="fld"><span>검색</span><input id="gq" placeholder="학교명·지역·유형"></label></div><div class="scroll tall"><table class="dt" id="gt"><thead><tr><th>학교</th><th>지역</th><th>유형</th><th>성별</th><th>모집정원</th><th>1학년 현원</th><th>2학년 현원</th><th>3학년 현원</th><th>전화</th></tr></thead><tbody></tbody></table></div><p class="muted">현원 = 학교알리미 공시 재적(학급수). 4월 1일 기준.</p>';
+  } else if (which === 'rules') {
+    html = Object.keys(RULES).map(function (id) { var r = RULES[id]; return '<div class="rule" id="rule-' + id + '"><b>' + h(r.t) + '</b> <span class="muted">(' + h(r.p) + ')</span><pre>' + h(r.x) + '</pre></div>'; }).join('');
+  } else if (which === 'src') {
+    html = '<h4>규정 간 확인이 필요한 점</h4><ol class="warn">' +
+      '<li><b>위원회 의결 기준 충돌</b>: 규정 제6조③ 「위원 만장일치로 전입에 동의하는 학생」 ↔ 제4조② 「출석 위원 5분의 3 이상 찬성」. 또한 지침 Ⅲ-6-나-3)은 법령·지침에 없는 학교 자체 결격사유로 불허할 수 없다고 정함 → 규정 정비 검토 필요.</li>' +
+      '<li><b>귀국학생 정원</b>: 학칙 제22조③ 1호(특례 귀국자 정원 외 5%)·2호(일반귀국자 정원 내) ↔ 지침 Ⅱ-3(귀국학생 등 정원 외 3%). 앱은 지침(3%) 기준으로 판정하고 「심의」로 표시.</li>' +
+      '<li><b>거리 기준(규정 제6조②)</b>: 「현저히 가까운」의 수치 기준이 없음. 앱은 웅천고가 가장 가깝고 다음 학교와 1km 이상 차이면 충족, 아니면 심의로 표시(직선거리 참고값).</li>' +
+      '<li><b>정원 외 「제한 없음」 유형</b>: 지침 Ⅱ-3에서 유급·재입학, 학폭 가해, 교육활동 침해, 체육특기자는 「제한 없음」. 앱은 이 유형을 10% 총합 계산에서 뺌(해석 사항).</li>' +
+      '<li><b>2027학년도</b>: 2027 지침이 나오면(보통 2월) 비율·시기 변경 여부 확인. 2027 학사일정이 없어 2027.3.1. 이후 날짜는 남은 수업일수를 직접 입력해야 함.</li></ol>' +
+      '<h4>자료 출처</h4><table class="dt"><tbody>' + META.sources.map(function (s) { return '<tr><td>' + h(s[0]) + '</td><td>' + h(s[1]) + '</td></tr>'; }).join('') + '</tbody></table>';
+  }
+  el.innerHTML = html;
+  if (which === 'quota') {
+    function qsum() {
+      $('#qSum').innerHTML = '<table class="dt"><thead><tr><th>학년</th><th>정원 내 결원</th><th>정원 외 총합(10%)</th><th>일반 전입(5%)</th><th>3% 유형 남은 자리</th></tr></thead><tbody>' + [1, 2, 3].map(function (g) {
+        var q = Q.g[g], t = 0; OUT_CATS.forEach(function (c) { if (c.in10) t += +q.out[c.k] || 0; });
+        var c10 = Math.floor(q.ent * 0.1), c5 = Math.floor(q.ent * 0.05), c3 = Math.floor(q.ent * 0.03);
+        return '<tr><td>' + g + '학년</td><td class="c">' + (q.ent - q.inside) + '</td><td class="c">' + t + ' / ' + c10 + '</td><td class="c">' + (+q.out.general || 0) + ' / ' + c5 + '</td><td>' + ['env', 'returnee', 'merit', 'military'].map(function (k) { return lbl(OUT_CATS.map(function (c) { return [c.k, c.n.split('(')[0]]; }), k) + ' ' + Math.max(0, c3 - (+q.out[k] || 0)); }).join(', ') + '</td></tr>';
+      }).join('') + '</tbody></table>';
+    }
+    qsum();
+    el.oninput = function (e) {
+      var t = e.target;
+      if (t.id === 'qBase') { Q.baseDate = t.value; saveBase(); rerun(); return; }
+      var p = t.getAttribute('data-q'); if (!p) return;
+      var a = p.split('.'), g = a[0]; if (a[1] === 'out') Q.g[g].out[a[2]] = +t.value || 0; else Q.g[g][a[1]] = +t.value || 0;
+      saveBase(); qsum(); rerun();
+    };
+    $('#qReset').onclick = function () { if (confirm('정원·현원을 공시 기준 기본값으로 되돌릴까요?')) { Q = JSON.parse(JSON.stringify(QUOTA_DEFAULT)); saveBase(); renderData('quota'); rerun(); } };
+  }
+  if (which === 'cal') {
+    el.onchange = function (e) {
+      var t = e.target, c = t.getAttribute('data-c'); if (!c) return;
+      if (c === 'periods') CAL.periods = t.value.split(/\n+/).map(function (l) { var m = l.match(/(\d{4}-\d{2}-\d{2})\s*~\s*(\d{4}-\d{2}-\d{2})/); return m ? [m[1], m[2]] : null; }).filter(Boolean);
+      else if (c === 'holidays') CAL.holidays = (t.value.match(/\d{4}-\d{2}-\d{2}/g) || []);
+      else CAL[c] = t.value;
+      saveBase(); rerun(); renderData('cal');
+    };
+    $('#cReset').onclick = function () { if (confirm('학사일정을 공시 기준으로 되돌릴까요?')) { CAL = JSON.parse(JSON.stringify(CAL_DEFAULT)); saveBase(); renderData('cal'); rerun(); } };
+  }  if (which === 'gne') {
+    var fill = function () {
+      var q = ($('#gq').value || '').trim();
+      $('#gt tbody').innerHTML = GNE.filter(function (s) { return !q || (s.n + s.r + s.t).indexOf(q) >= 0; }).map(function (s) { var si = s.si || {}; var gc = function (i) { return si.cnt ? si.cnt[i] + '명(' + si.cls[i] + ')' : '-'; }; return '<tr><td>' + h(s.n) + '</td><td>' + h(s.r) + '</td><td>' + h(s.t) + '</td><td>' + h(s.g) + '</td><td class="c">' + (s.q || '') + '</td><td class="c">' + gc(0) + '</td><td class="c">' + gc(1) + '</td><td class="c">' + gc(2) + '</td><td>' + h(s.tel) + '</td></tr>'; }).join('');
+    };
+    fill(); $('#gq').oninput = fill;
+  }
+}
+
+/* ---------- 모집정원 최신화(고입포털) ---------- */
+var GNE_LS = 'wc-transfer-gne-v1';
+function applyGne(list, meta) {
+  if (!list || list.length < 100) return false;
+  GNE = list; GNE_META = meta;
+  JINHAE.forEach(function (j) { var s = GNE.filter(function (x) { return x.n === j.n; })[0]; if (s && s.q) j.q = s.q; });
+  return true;
+}
+function loadGneCache() { try { var c = JSON.parse(localStorage.getItem(GNE_LS) || 'null'); if (c && c.schools && c.siYear && String(c.updated) > String(GNE_META.updated)) applyGne(c.schools, { updated: c.updated, from: '저장된 값', siYear: c.siYear }); } catch (e) { } }
+function gneStamp() { return '모집정원·현원 기준: ' + GNE_META.updated + ' 수집 · 모집정원 고입포털, 현원 ' + (GNE_META.siYear ? '학교알리미 ' + GNE_META.siYear + ' 공시(4월 1일 기준)' : '자료 없음') + ' · ' + GNE_META.from; }
+function paintGneStamp(msg, cls) { $$('.gne-stamp').forEach(function (el) { el.textContent = msg || gneStamp(); el.className = 'gne-stamp ' + (cls || ''); }); }
+var GNE_BUSY = false;
+function refreshGne(force) {
+  if (GNE_BUSY) return; GNE_BUSY = true;
+  paintGneStamp(force ? '고입포털·학교알리미에서 새로 읽는 중…(1분 정도 걸림)' : '모집정원·현원 최신 자료 확인 중…', 'busy');
+  fetch(GNE_PROXY + (force ? '?force=1' : '')).then(function (r) { return r.json(); }).then(function (j) {
+    GNE_BUSY = false;
+    if (!j.ok || !applyGne(j.schools, { updated: j.updated, from: '최신', siYear: j.siYear })) throw new Error(j.error || '자료 없음');
+    try { localStorage.setItem(GNE_LS, JSON.stringify({ updated: j.updated, siYear: j.siYear, schools: j.schools })); } catch (e) { }
+    paintGneStamp(gneStamp() + ' (' + j.count + '교)', 'ok');
+    rerun(); var on = $('.sub.on'); if (on && ['gne', 'jinhae'].indexOf(on.getAttribute('data-sub')) >= 0) renderData(on.getAttribute('data-sub'));
+  }).catch(function (e) { GNE_BUSY = false; paintGneStamp(gneStamp() + ' · 새로고침 실패(인터넷 연결 확인): ' + e.message, 'warn'); });
+}
+
+/* ---------- 주소 → 좌표 → 거리 ---------- */
+var GEO_MAP = null, GEO_HOME = null;
+function geoMsg(t, cls) { var m = $('#fIn .geo-msg'); if (m) { m.textContent = t; m.className = 'geo-msg ' + (cls || 'muted'); } }
+function photon(q, box) {
+  var u = 'https://photon.komoot.io/api/?limit=6&lang=default&q=' + encodeURIComponent(q) + (box ? '&bbox=128.60,35.04,128.87,35.21' : '&lat=35.13&lon=128.72');
+  return fetch(u).then(function (r) { return r.json(); }).then(function (j) {
+    return (j.features || []).filter(function (f) { return f.properties.countrycode === 'KR'; }).map(function (f) {
+      var p = f.properties, lab = [p.city, p.district, p.street, p.housenumber, p.name && p.name !== p.street ? p.name : ''].filter(Boolean).join(' ');
+      return { lat: f.geometry.coordinates[1], lng: f.geometry.coordinates[0], label: lab || q };
+    });
+  });
+}
+function roadDist(lat, lng) {
+  var pts = [[lng, lat]].concat(JINHAE.map(function (s) { return [s.lng, s.lat]; }));
+  var u = 'https://router.project-osrm.org/table/v1/driving/' + pts.map(function (p) { return p[0].toFixed(6) + ',' + p[1].toFixed(6); }).join(';') + '?sources=0&annotations=distance';
+  return fetch(u).then(function (r) { return r.json(); }).then(function (j) {
+    if (j.code !== 'Ok') throw new Error(j.code);
+    var m = {}; JINHAE.forEach(function (s, i) { var d = j.distances[0][i + 1]; if (d != null) m[s.n] = { km: d / 1000 }; }); return m;
+  });
+}
+function setGeo(c, note) {
+  var g = { lat: c.lat, lng: c.lng, label: c.label, road: null };
+  STATE.in.geo = g; run('in');
+  geoMsg('위치: ' + c.label + (note ? ' ' + note : '') + ' · 도로거리 계산 중…');
+  showMap(c);
+  roadDist(c.lat, c.lng).then(function (m) {
+    if (STATE.in.geo !== g) return;
+    g.road = m; run('in'); geoMsg('위치: ' + c.label + (note ? ' ' + note : '') + ' · 도로거리(자동차 경로) 반영. 위치가 다르면 지도의 핀을 끌어 옮기세요.', 'ok-msg');
+  }).catch(function () { if (STATE.in.geo === g) geoMsg('위치: ' + c.label + ' · 도로거리 서버 응답이 없어 직선거리로 판정합니다.', 'warn-msg'); });
+}
+function showMap(c) {
+  var el = $('#geoMap'); if (!el || typeof L === 'undefined') return;
+  el.hidden = false;
+  if (!GEO_MAP) {
+    GEO_MAP = L.map(el, { scrollWheelZoom: false }).setView([c.lat, c.lng], 12);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, attribution: 'Tiles © Esri' }).addTo(GEO_MAP);
+    JINHAE.forEach(function (s) { L.circleMarker([s.lat, s.lng], { radius: s.me ? 8 : 6, color: s.me ? '#0b2a5b' : '#475569', fillColor: s.me ? '#f59e0b' : '#94a3b8', fillOpacity: 1, weight: 2 }).addTo(GEO_MAP).bindTooltip(s.s + (s.from ? '(2027 개교)' : ''), { permanent: true, direction: 'top', offset: [0, -6], className: 'sch-tip' }); });
+    GEO_HOME = L.marker([c.lat, c.lng], { draggable: true, title: '거주지(끌어서 조정)' }).addTo(GEO_MAP);
+    GEO_HOME.on('dragend', function () { var p = GEO_HOME.getLatLng(); setGeo({ lat: p.lat, lng: p.lng, label: ($('#fIn [name=addr]').value || '지도 위치') }, '(지도에서 조정)'); });
+  } else { GEO_HOME.setLatLng([c.lat, c.lng]); }
+  setTimeout(function () { GEO_MAP.invalidateSize(); var b = L.latLngBounds([[c.lat, c.lng], [35.11269, 128.74919]]); GEO_MAP.fitBounds(b.pad(0.35), { maxZoom: 15 }); }, 50);
+}
+function geocodeAddr() {
+  var q = ($('#fIn [name=addr]').value || '').trim(), ul = $('#fIn .geo-cands'); ul.innerHTML = '';
+  if (!q) { STATE.in.geo = null; run('in'); geoMsg(''); return; }
+  geoMsg('주소를 찾는 중…');
+  photon(q, true).then(function (a) { return a.length ? a : photon(q.indexOf('진해') < 0 ? '창원시 진해구 ' + q : q, false); }).then(function (a) {
+    if (!a.length) { geoMsg('주소를 찾지 못했습니다. 도로명만(예: 웅천중로) 넣어 보거나 행정동을 고르세요.', 'warn-msg'); return; }
+    if (a.length > 1) ul.innerHTML = a.slice(0, 5).map(function (c, i) { return '<li><button type="button" data-geo="' + i + '"' + (i === 0 ? ' class="on"' : '') + '>' + h(c.label) + '</button></li>'; }).join('');
+    ul._cands = a; setGeo(a[0]);
+  }).catch(function () { geoMsg('주소 검색 서버에 연결할 수 없습니다(인터넷 연결 확인). 행정동을 고르거나 거리를 직접 입력하세요.', 'warn-msg'); });
+}
+
+/* ---------- 실행 ---------- */
+var STATE = { in: { ex: {}, open: {} }, out: { ex: {}, open: {} } };
+function run(kind) {
+  var isIn = kind === 'in', form = $(isIn ? '#fIn' : '#fOut'), fields = isIn ? FIELDS_IN : FIELDS_OUT;
+  var f = readForm(form, fields);
+  var ex = (STATE[kind] && STATE[kind].ex) || {};
+  if (isIn) f.geo = (STATE.in.geo && f.addr) ? STATE.in.geo : null;
+  CUR_EX = ex;
+  var res = isIn ? evalIn(f, Q, CAL) : evalOut(f, Q, CAL);
+  var old = STATE[kind] || {};
+  STATE[kind] = { f: f, res: res, ex: ex, open: old.open || {}, noRulesPrint: !!old.noRulesPrint, geo: old.geo || null };
+  document.body.classList.toggle('np-' + kind, !!old.noRulesPrint);
+  $(isIn ? '#sIn' : '#sOut').innerHTML = renderSheet(kind, f, res);
+  var hint = form.querySelector('[data-k="remOverride"] span');
+  if (hint) { var rem = f.date ? remainingDays(CAL, f.date) : null; hint.textContent = (isIn ? '웅천고' : '전입교') + ' 남은 수업일수(자동 ' + (rem == null ? '계산 불가' : rem + '일') + ', 직접 입력 시 우선)'; }
+}
+function rerun() { run('in'); run('out'); }
+function showTab(id) {
+  $$('.tab').forEach(function (b) { b.classList.toggle('on', b.getAttribute('data-tab') === id); b.setAttribute('aria-selected', b.getAttribute('data-tab') === id); });
+  $$('.pane').forEach(function (p) { p.hidden = p.id !== 'tab-' + id; });
+  document.body.setAttribute('data-tab', id);
+}
+function openRule(id) {
+  var r = RULES[id]; if (!r) return;
+  $('#dlgT').textContent = r.t + ' (' + r.p + ')'; $('#dlgX').textContent = r.x; $('#dlg').showModal();
+}
+document.addEventListener('DOMContentLoaded', function () {
+  loadBase();
+  loadGneCache();
+  buildForm($('#fIn'), FIELDS_IN, function () { run('in'); });
+  buildForm($('#fOut'), FIELDS_OUT, function () { run('out'); });
+  rerun();
+  $$('.tab').forEach(function (b) { b.onclick = function () { showTab(b.getAttribute('data-tab')); }; });
+  $$('.sub').forEach(function (b) { b.onclick = function () { $$('.sub').forEach(function (x) { x.classList.toggle('on', x === b); }); renderData(b.getAttribute('data-sub')); }; });
+  renderData('quota');
+  document.addEventListener('click', function (e) {
+    var exi = e.target.closest('input[data-ex]');
+    if (exi) { var kd = exi.closest('#sIn') ? 'in' : 'out'; var id = exi.getAttribute('data-ex'); if (exi.checked) STATE[kd].ex[id] = true; else delete STATE[kd].ex[id]; run(kd); return; }
+    var g = e.target.closest('[data-goto]');
+    if (g) { var sh = g.closest('.sheet'), kd2 = sh.id === 'sIn' ? 'in' : 'out', d = sh.querySelector('details[data-rid="' + g.getAttribute('data-goto') + '"]'); if (d) { d.open = true; STATE[kd2].open[d.getAttribute('data-rid')] = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' }); d.classList.add('flash'); setTimeout(function () { d.classList.remove('flash'); }, 1600); } return; }
+    var pr = e.target.closest('.rs-pr');
+    if (pr) { var kd3 = pr.closest('#sIn') ? 'in' : 'out'; STATE[kd3].noRulesPrint = !pr.checked; document.body.classList.toggle('np-' + kd3, !pr.checked); return; }
+    var t = e.target.closest('[data-rule]'); if (t) { openRule(t.getAttribute('data-rule')); return; }
+    var gc = e.target.closest('[data-geo]');
+    if (gc) { var ul = gc.closest('.geo-cands'); $$('button', ul).forEach(function (b) { b.classList.toggle('on', b === gc); }); setGeo(ul._cands[+gc.getAttribute('data-geo')]); return; }
+    var a = e.target.closest('[data-act]'); if (!a) return;
+    var act = a.getAttribute('data-act');
+    if (act === 'geo') geocodeAddr();
+    if (act === 'gne-refresh') refreshGne(true);
+    if (act === 'print') window.print();
+    if (act === 'open-all' || act === 'close-all') { var sh2 = a.closest('.sheet'), kd4 = sh2.id === 'sIn' ? 'in' : 'out'; $$('details.rd', sh2).forEach(function (d) { d.open = act === 'open-all'; STATE[kd4].open[d.getAttribute('data-rid')] = d.open; }); }
+    if (act === 'hwpx-in') exportHwpx('in'); if (act === 'hwpx-out') exportHwpx('out');
+    if (act === 'xlsx-in') exportResultXlsx('in'); if (act === 'xlsx-out') exportResultXlsx('out');
+    if (act === 'xlsx-base') exportBaseXlsx();
+    if (act === 'reset-in') { $('#fIn').reset(); STATE.in.ex = {}; STATE.in.geo = null; var gm = $('#geoMap'); if (gm) gm.hidden = true; $('#fIn .geo-cands').innerHTML = ''; geoMsg(''); run('in'); } if (act === 'reset-out') { $('#fOut').reset(); STATE.out.ex = {}; run('out'); }
+  });
+  $('#dlgClose').onclick = function () { $('#dlg').close(); };
+  $('#fIn').addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.name === 'addr') { e.preventDefault(); geocodeAddr(); } });
+  $('#fIn').addEventListener('input', function (e) { if (e.target.name === 'addr' && !e.target.value.trim()) { STATE.in.geo = null; var m = $('#geoMap'); if (m) m.hidden = true; $('#fIn .geo-cands').innerHTML = ''; geoMsg(''); run('in'); } });
+  document.addEventListener('toggle', function (e) { var d = e.target; if (!d.matches || !d.matches('details.rd')) return; var kd = d.closest('#sIn') ? 'in' : 'out'; STATE[kd].open[d.getAttribute('data-rid')] = d.open; }, true);
+  var printOpened = [];
+  window.addEventListener('beforeprint', function () { printOpened = $$('details.rd:not([open])'); printOpened.forEach(function (d) { d.setAttribute('open', ''); }); });
+  window.addEventListener('afterprint', function () { printOpened.forEach(function (d) { d.removeAttribute('open'); }); printOpened = []; });
+  showTab('in');
+  refreshGne(false);
+});
+
+</script>
+</body>
+</html>
