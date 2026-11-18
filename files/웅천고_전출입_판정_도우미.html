@@ -72,6 +72,13 @@ td.seat.ok,.seat.ok{color:#0f7a36;font-weight:800}td.seat.ok{background:var(--ok
 .rs-btns{margin-left:auto;display:flex;gap:6px;align-items:center}
 .btn.sm{padding:4px 9px;font-size:12px}
 .rs-print{font-size:12px;font-weight:700;display:flex;gap:4px;align-items:center}
+.rs-pickbar{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0 0 8px;padding:6px 8px;background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px}
+.rs-cnt{font-size:13px;margin-right:4px}.rs-cnt b{font-size:15px;color:#0b2a5b}
+.rd-row{display:flex;gap:6px;align-items:flex-start;margin:0 0 6px}.rd-row details{flex:1;margin:0}
+.rd-pick{flex:none;display:flex;flex-direction:column;align-items:center;gap:1px;width:44px;padding:5px 2px;border:2px solid #0b2a5b;border-radius:6px;background:#fff;cursor:pointer;font-size:11px;font-weight:800;color:#0b2a5b}
+.rd-pick input{width:18px;height:18px;margin:0;accent-color:#0b2a5b}
+.rd-row:not(.unpicked) .rd-pick{background:#dbeafe}
+.rd-row.unpicked details{opacity:.55}.rd-row.unpicked .rd-pick{border-color:#94a3b8;color:#64748b}
 details.rd{border:1px solid #94a3b8;border-left-width:6px;border-radius:6px;margin:0 0 6px;background:#fff}
 details.rd.w-bad{border-left-color:var(--bad)}details.rd.w-review{border-left-color:#b7791f}details.rd.w-ok{border-left-color:var(--ok)}details.rd.w-info,details.rd.w-na{border-left-color:#64748b}
 details.rd summary{cursor:pointer;padding:6px 8px;display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline;font-size:13px;list-style-position:inside}
@@ -126,7 +133,8 @@ dialog::backdrop{background:rgba(0,0,0,.45)}
   .rc{border:none;background:none;padding:0;font-size:8.5px}
   .exb{display:none!important}
   .golink,.rs-btns .btn,.rs-print,[data-act=gne-refresh]{display:none!important}
-  body.np-in #sIn .rulesec,body.np-out #sOut .rulesec{display:none!important}
+  .rd-row.unpicked,.rulesec.nopick,.rd-pick,.rs-pickbar{display:none!important}
+  .rd-row details{opacity:1!important}
   details.rd{break-inside:auto}.rd-body pre{font-size:9.5px}details.rd summary{font-size:10px}
   .exbox{font-size:9.5px}
   *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -1087,16 +1095,19 @@ function citedRules(res) {
 }
 var RTAG = { bad: ['위배 근거', 'bad'], review: ['심의·확인 근거', 'review'], check: ['심의·확인 근거', 'review'], step: ['절차 근거', 'info'], ok: ['참고', 'ok'], info: ['참고', 'info'], na: ['참고', 'na'] };
 function itemShort(x) { return x.item.replace(/^([①-⑩])\s*/, '$1 ').split('(')[0].trim(); }
+function isPicked(kind, c) { var pk = (STATE[kind] && STATE[kind].pick) || {}; return pk[c.id] != null ? pk[c.id] : (c.worst === 'bad' || c.worst === 'review' || c.worst === 'check'); }
+function pickedRules(kind, res) { return citedRules(res).filter(function (c) { return isPicked(kind, c); }); }
 function rulesSection(kind, res) {
-  var cr = citedRules(res), op = STATE[kind].open || {};
-  return '<div class="rulesec" id="rs-' + kind + '"><div class="rs-head"><b>근거 지침·학칙·규정 원문</b><span class="rs-sub">위배·심의 항목의 근거부터 보여 줍니다.</span>' +
+  var cr = citedRules(res), op = STATE[kind].open || {}, npk = cr.filter(function (c) { return isPicked(kind, c); }).length;
+  return '<div class="rulesec' + (npk ? '' : ' nopick') + '" id="rs-' + kind + '"><div class="rs-head"><b>근거 지침·학칙·규정 원문</b><span class="rs-sub">위배·심의 항목의 근거부터 보여 줍니다. 왼쪽 「인쇄」에 체크한 조항만 인쇄·한글·엑셀에 들어갑니다.</span>' +
     '<span class="rs-btns"><button type="button" class="btn ghost sm" data-act="open-all">모두 펼치기</button><button type="button" class="btn ghost sm" data-act="close-all">모두 접기</button>' +
-    '<label class="rs-print"><input type="checkbox" class="rs-pr" ' + (STATE[kind].noRulesPrint ? '' : 'checked') + '> 인쇄·한글에 포함</label></span></div>' +
+    '</span></div><div class="rs-pickbar"><span class="rs-cnt">인쇄할 조항 <b>' + npk + '</b> / ' + cr.length + '</span><button type="button" class="btn sm" data-act="pick-key">위배·심의 근거만</button><button type="button" class="btn ghost sm" data-act="pick-all">모두 선택</button><button type="button" class="btn ghost sm" data-act="pick-none">모두 해제</button></div>' +
     cr.map(function (c) {
       var r = RULES[c.id], tg = RTAG[c.worst] || RTAG.info, isOpen = op[c.id] != null ? op[c.id] : c.worst === 'bad';
-      return '<details class="rd w-' + tg[1] + '" data-rid="' + c.id + '"' + (isOpen ? ' open' : '') + '><summary><span class="tag ' + tg[1] + '">' + tg[0] + '</span><b>' + h(r.t) + '</b> <span class="muted">(' + h(r.p) + ')</span><span class="rel">관련: ' + c.items.map(function (x) { return h(itemShort(x)) + '<i class="s-' + (x.exApplied ? 'ok' : x.st) + '">' + stLabel(x) + '</i>'; }).join(', ') + '</span></summary>' +
+      var pk = isPicked(kind, c);
+      return '<div class="rd-row' + (pk ? '' : ' unpicked') + '"><label class="rd-pick" title="인쇄·한글·엑셀에 넣기"><input type="checkbox" class="rd-sel" data-rid="' + c.id + '"' + (pk ? ' checked' : '') + '><span>인쇄</span></label><details class="rd w-' + tg[1] + '" data-rid="' + c.id + '"' + (isOpen ? ' open' : '') + '><summary><span class="tag ' + tg[1] + '">' + tg[0] + '</span><b>' + h(r.t) + '</b> <span class="muted">(' + h(r.p) + ')</span><span class="rel">관련: ' + c.items.map(function (x) { return h(itemShort(x)) + '<i class="s-' + (x.exApplied ? 'ok' : x.st) + '">' + stLabel(x) + '</i>'; }).join(', ') + '</span></summary>' +
         '<div class="rd-body">' + c.items.filter(function (x) { return x.st === 'bad' || x.st === 'review' || x.st === 'check' || x.exApplied; }).map(function (x) { return '<div class="rd-why"><b>' + h(itemShort(x)) + '</b>: ' + h(x.why) + '</div>'; }).join('') +
-        '<pre>' + h(r.x) + '</pre></div></details>';
+        '<pre>' + h(r.x) + '</pre></div></details></div>';
     }).join('') + '</div>';
 }
 function renderSheet(kind, f, res) {
@@ -1170,9 +1181,10 @@ function exportHwpx(kind) {
   blocks.push({ type: 'p', cp: 2, text: res.docs.join(' / ') });
   blocks.push({ type: 'h', text: '■ 절차' });
   blocks.push({ type: 'p', cp: 2, text: res.steps.map(function (s, k) { return (k + 1) + ') ' + s; }).join('  →  ') });
-  if (!st.noRulesPrint) {
+  var prs = pickedRules(kind, res);
+  if (prs.length) {
     blocks.push({ type: 'h', text: '■ 근거 지침·학칙·규정 원문' });
-    citedRules(res).forEach(function (c) {
+    prs.forEach(function (c) {
       var r = RULES[c.id], tg = RTAG[c.worst] || RTAG.info;
       var rows2 = [[{ v: '[' + tg[0] + '] ' + r.t + ' (' + r.p + ')  관련: ' + c.items.map(function (x) { return itemShort(x) + '(' + stLabel(x) + ')'; }).join(', '), bf: tg[1] === 'bad' ? 5 : (tg[1] === 'review' ? 7 : 4), cp: 3, al: 'L' }], [{ v: r.x, al: 'L', cp: 2 }]];
       blocks.push({ type: 'table', cols: [100], rows: rows2, noSplit: true });
@@ -1192,7 +1204,7 @@ function exportResultXlsx(kind) {
   var sheets = [{ name: '검토서', cols: [24, 12, 40, 55, 34], rows: rows }];
   if (!isIn && res.extra) sheets.push({ name: '갈 수 있는 학교', cols: [24, 10, 26, 7, 10, 12, 9, 12, 20, 44], freeze: 2, rows: [[{ v: gneStamp(), s: 1 }], ['학교', '지역', '유형', '성별', '모집정원', f.grade + '학년 현원', '학급수', '학급당 정원', '자리(추정)', '전학 방법'].map(function (x) { return { v: x, s: 1 }; })].concat(res.extra.cands.map(function (c) { var se = c.seat, sx = seatText(se); return [{ v: c.n + (c.st === 'bad' ? '(불가)' : ''), s: 2 }, { v: c.r, s: 2 }, { v: c.t, s: 2 }, { v: c.g, s: 2 }, { v: c.q || '', s: 2 }, { v: se ? se.cnt : '', s: 2 }, { v: se ? se.cls : '', s: 2 }, { v: se && se.per ? se.per : '', s: 2 }, { v: sx.t, s: ST_XLS[sx.c] || 2 }, { v: c.how, s: 2 }]; })) });
   var used = {}; res.rows.forEach(function (x) { x.rules.forEach(function (id) { used[id] = 1; }); });
-  sheets.push({ name: '근거 규정 원문', cols: [14, 34, 12, 30, 110], rows: [['구분', '조항', '출처', '관련 항목', '원문'].map(function (x) { return { v: x, s: 1 }; })].concat(citedRules(res).map(function (c) { var r = RULES[c.id], tg = RTAG[c.worst] || RTAG.info; return [{ v: tg[0], s: ST_XLS[c.worst] }, { v: r.t, s: 2 }, { v: r.p, s: 2 }, { v: c.items.map(function (x) { return itemShort(x) + '(' + stLabel(x) + ')'; }).join('\n'), s: 2 }, { v: r.x, s: 2 }]; })) });
+  sheets.push({ name: '근거 규정 원문', cols: [14, 34, 12, 30, 110], rows: [['구분', '조항', '출처', '관련 항목', '원문'].map(function (x) { return { v: x, s: 1 }; })].concat(pickedRules(kind, res).map(function (c) { var r = RULES[c.id], tg = RTAG[c.worst] || RTAG.info; return [{ v: tg[0], s: ST_XLS[c.worst] }, { v: r.t, s: 2 }, { v: r.p, s: 2 }, { v: c.items.map(function (x) { return itemShort(x) + '(' + stLabel(x) + ')'; }).join('\n'), s: 2 }, { v: r.x, s: 2 }]; })) });
   download(XLSX.build(sheets), '웅천고_' + (isIn ? '전입' : '전출') + '_검토결과_' + (f.name || '학생') + '_' + today() + '.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
 }
 function exportBaseXlsx() {
@@ -1392,8 +1404,7 @@ function run(kind) {
   CUR_EX = ex;
   var res = isIn ? evalIn(f, Q, CAL) : evalOut(f, Q, CAL);
   var old = STATE[kind] || {};
-  STATE[kind] = { f: f, res: res, ex: ex, open: old.open || {}, noRulesPrint: !!old.noRulesPrint, geo: old.geo || null };
-  document.body.classList.toggle('np-' + kind, !!old.noRulesPrint);
+  STATE[kind] = { f: f, res: res, ex: ex, open: old.open || {}, pick: old.pick || {}, geo: old.geo || null };
   $(isIn ? '#sIn' : '#sOut').innerHTML = renderSheet(kind, f, res);
   var hint = form.querySelector('[data-k="remOverride"] span');
   if (hint) { var rem = f.date ? remainingDays(CAL, f.date) : null; hint.textContent = (isIn ? '웅천고' : '전입교') + ' 남은 수업일수(자동 ' + (rem == null ? '계산 불가' : rem + '일') + ', 직접 입력 시 우선)'; }
@@ -1422,8 +1433,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (exi) { var kd = exi.closest('#sIn') ? 'in' : 'out'; var id = exi.getAttribute('data-ex'); if (exi.checked) STATE[kd].ex[id] = true; else delete STATE[kd].ex[id]; run(kd); return; }
     var g = e.target.closest('[data-goto]');
     if (g) { var sh = g.closest('.sheet'), kd2 = sh.id === 'sIn' ? 'in' : 'out', d = sh.querySelector('details[data-rid="' + g.getAttribute('data-goto') + '"]'); if (d) { d.open = true; STATE[kd2].open[d.getAttribute('data-rid')] = true; d.scrollIntoView({ behavior: 'smooth', block: 'start' }); d.classList.add('flash'); setTimeout(function () { d.classList.remove('flash'); }, 1600); } return; }
-    var pr = e.target.closest('.rs-pr');
-    if (pr) { var kd3 = pr.closest('#sIn') ? 'in' : 'out'; STATE[kd3].noRulesPrint = !pr.checked; document.body.classList.toggle('np-' + kd3, !pr.checked); return; }
+    var ps = e.target.closest('input.rd-sel');
+    if (ps) { var kd3 = ps.closest('#sIn') ? 'in' : 'out'; STATE[kd3].pick[ps.getAttribute('data-rid')] = ps.checked; run(kd3); return; }
     var t = e.target.closest('[data-rule]'); if (t) { openRule(t.getAttribute('data-rule')); return; }
     var gc = e.target.closest('[data-geo]');
     if (gc) { var ul = gc.closest('.geo-cands'); $$('button', ul).forEach(function (b) { b.classList.toggle('on', b === gc); }); setGeo(ul._cands[+gc.getAttribute('data-geo')]); return; }
@@ -1432,6 +1443,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (act === 'geo') geocodeAddr();
     if (act === 'gne-refresh') refreshGne(true);
     if (act === 'print') window.print();
+    if (act === 'pick-key' || act === 'pick-all' || act === 'pick-none') { var kd5 = a.closest('#sIn') ? 'in' : 'out'; STATE[kd5].pick = {}; if (act !== 'pick-key') citedRules(STATE[kd5].res).forEach(function (c) { STATE[kd5].pick[c.id] = act === 'pick-all'; }); run(kd5); }
     if (act === 'open-all' || act === 'close-all') { var sh2 = a.closest('.sheet'), kd4 = sh2.id === 'sIn' ? 'in' : 'out'; $$('details.rd', sh2).forEach(function (d) { d.open = act === 'open-all'; STATE[kd4].open[d.getAttribute('data-rid')] = d.open; }); }
     if (act === 'hwpx-in') exportHwpx('in'); if (act === 'hwpx-out') exportHwpx('out');
     if (act === 'xlsx-in') exportResultXlsx('in'); if (act === 'xlsx-out') exportResultXlsx('out');
